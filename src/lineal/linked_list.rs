@@ -9,7 +9,7 @@
 ///             ----------------
 /// ```
 #[derive(Debug)]
-struct NodeLink<T> {
+pub struct NodeLink<T> {
     value: T,
     next: Option<Box<NodeLink<T>>>,
 }
@@ -118,41 +118,38 @@ impl LinkedList<i32> {
     /// ```
     pub fn remove_first_ocurrence(&mut self , value : i32) -> Result<i32 , String>{
         if self.empty() { // Head is None -> False
-            return Err(String::from("La lista se encuentra vacia"));
+            return Err(String::from("La lista está vacía"));
         }
-        else {
-            if let Some(_node) = &mut self.head{
-                if _node.value == value{
-                    let delete_node = _node.value;
-                    match &_node.next {
-                        None => {
-                            self.head = None;
-                            self.size -= 1;
-                            return Ok(delete_node);
-                        }, 
-                        Some(_node_next) => {
-                            self.head = _node.next.take();
-                            self.size -= 1;
-                            return Ok(delete_node);
-                        }
-                    }
-                }else {
-                    let mut current = &mut self.head;
-                    while let Some(ref mut _node) = current{
-                        if let Some(_node_next) = &mut _node.next{
-                            if _node_next.value == value{ //estamos a la mitad de la lista
-                                let value_deleted = _node_next.value;
-                                _node.next = _node_next.next.take();
-                                self.size -= 1;
-                                return Ok(value_deleted);
-                            }
-                        }
-                        current = &mut _node.next;
+        if let Some(_node) = &mut self.head{
+            if _node.value == value{
+                let delete_node = _node.value;
+                match &_node.next {
+                    None => {
+                        self.head = None;
+                        self.size -= 1;
+                        return Ok(delete_node);
+                    }, 
+                    Some(_node_next) => {
+                        self.head = _node.next.take();
+                        self.size -= 1;
+                        return Ok(delete_node);
                     }
                 }
             }
-            return Err(String::from("El valor no se encuentra en la lista"));
+        let mut current = &mut self.head;
+        while let Some(ref mut _node) = current{
+            if let Some(_node_next) = &mut _node.next{
+                if _node_next.value == value{ //estamos a la mitad de la lista
+                    let value_deleted = _node_next.value;
+                    _node.next = _node_next.next.take();
+                    self.size -= 1;
+                    return Ok(value_deleted);
+                    }
+                }
+                current = &mut _node.next;
+            }
         }
+        Err(String::from("No se encuentra el valor en la lista"))
     }
     pub fn empty(&self) -> bool {
         self.head.is_none()
@@ -194,4 +191,40 @@ impl LinkedList<i32> {
             Ok(string_list)
         }
     }
+}
+#[cfg(test)]
+mod tests{
+    use super::*;
+    #[test]
+    fn correct_creation(){
+        let mut list : LinkedList<i32> = LinkedList::new();
+    }
+    #[test]
+    fn add_values_to_list(){
+        let mut list = LinkedList::new();
+        list.append(10);
+        list.append(20);
+        list.append(30);
+        list.append(40);
+        assert_eq!(list.len() , 4 , "No coinciden los valores de prueba con espacio de la lista {}" , list.see_list().unwrap());
+    }
+    #[test]
+    fn remove_first_ocurrence_test(){
+        let mut list = LinkedList::new();
+        list.append(10);
+        list.append(20);
+        list.append(30);
+        list.append(40);
+        list.append(50);
+        list.append(60);
+        list.append(70);
+        assert_eq!(list.remove_first_ocurrence(10).unwrap() , 10 , "No coincide el valor eliminado con el comparado");
+        assert_eq!(list.len() , 6);
+        assert_eq!(list.remove_first_ocurrence(30).unwrap() , 30 , "No coincide el valor eliminado con el comparado");
+        assert_eq!(list.len() , 5);
+        assert_eq!(list.remove_first_ocurrence(70).unwrap() , 70 , "No coincide el valor eliminado con el comparado");
+        assert_eq!(list.len() , 4);
+    }
+
+
 }
