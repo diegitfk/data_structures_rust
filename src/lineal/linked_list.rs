@@ -1,4 +1,7 @@
-///Está es la estructura básica del nodo de una lista enlazada, este posee tolerancia opcional de tipo recursiva
+use std::ptr::read_unaligned;
+
+///### Nodo simple
+/// Está es la estructura básica del nodo de una lista enlazada, este posee tolerancia opcional de tipo recursiva
 ///para poder tolerar el mismo tipo dentro de el.
 /// #Ejemplo Visual de la estructura
 /// ```text
@@ -13,7 +16,8 @@ pub struct NodeLink<T> {
     value: T,
     next: Option<Box<NodeLink<T>>>,
 }
-///Esta estructura compone la opcionalidad de un nodo almacenado en heap y linkea los nodos, de manera logica.
+///### LinkedList
+/// Esta estructura compone la opcionalidad de un nodo almacenado en heap y linkea los nodos, de manera logica.
 ///```text
 ///             ---------------          ---------------              
 ///            |       |       |        |       |       |            
@@ -78,10 +82,123 @@ impl LinkedList<i32> {
             }
         }
     }
-    fn pop(&mut self){
-        todo!("Implementar la función pop");
+    ///### Pop
+    /// Pop es una forma de eliminar datos en una lista simplemente enlazada, la complejidad de hacer pop en una lista simplemente enlazada
+    /// en el peor de los casos es O(n) y en el mejor O(1) siempre y cuando la lista posea un espacio de un nodo en la misma.
+    /// ```text
+    /// Supongamos que contamos con la siguiente lista
+    ///           
+    ///             ---------------          ---------------         ---------------              \  /  
+    ///            |       |       |        |       |       |       |       |       |              \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT | ----> |  30   |  NEXT | -------->    /\
+    ///            |       |       |        |       |       |       |       |       |             /  \  
+    ///             ---------------          ---------------         ---------------             /    \  
+    /// ```
+    /// #### pop()
+    /// ```text
+    /// Cuando hacemos pop el penultimo nodo de la lista se enlaza a la referencia siguiente del ultimo nodo de la lista para perder
+    /// el enlaze secuencial , eliminandolo de las referencias secuenciales de la siguiente manera.
+    ///         
+    ///             ---------------          ---------------         ---------------              \  /  
+    ///            |       |       |        |       |       |       |       |       |              \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT | ----> |  30   |  NEXT | -------->    /\
+    ///            |       |       |        |       |       |       |       |       |             /  \  
+    ///             ---------------          ---------------         ---------------             /    \  
+    /// 
+    ///             ---------------          ---------------         ---------------              \  /  
+    ///            |       |       |        |       |       |       |       |       |              \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT |       |  30   |  NEXT | -------->    /\
+    ///            |       |       |        |       |       |       |       |       |             /  \  
+    ///             ---------------          ---------------         ---------------             /    \ 
+    ///                                                |____________________________________________↑
+    /// 
+    ///             ---------------          ---------------             \  /  
+    ///            |       |       |        |       |       |             \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT | ---->       /\
+    ///            |       |       |        |       |       |            /  \  
+    ///             ---------------          ---------------            /    \  
+    /// 
+    /// ```
+ 
+    pub fn pop(&mut self) -> Result<i32 , String>{
+        if self.empty(){
+            return Err(String::from("La lista se encuentra vacia"));
+        }
+        if let Some(ref mut node) = self.head{
+            if node.next.is_none(){ //en el caso de que solamente sea el head en la lista
+                let remove_value: i32 = node.value;
+                self.head = node.next.take();
+                self.size -= 1;
+                return Ok(remove_value);
+            }
+
+        }
+        let mut current: &mut Box<NodeLink<i32>> = self.head.as_mut().unwrap();
+        while let Some(ref mut next) = current.next{
+            if next.next.is_none(){
+                let last_one = current.next.take().unwrap();
+                return Ok(last_one.value);
+            }
+            current = current.next.as_mut().unwrap();
+        }
+        Err(String::from("Error inesperado"))
     }
-    fn shirt(&mut self){
+    ///### Shirt
+    /// Shirt es una forma de eliminar datos en una lista simplemente enlazada, la complejidad de hacer shirt en una lista simplemente enlazada
+    /// en es O(1) debido a que son unos pequeños movimientos de la cabeza de la lista, a donde apunta.
+    /// ```text
+    /// Supongamos que contamos con la siguiente lista
+    ///           
+    ///             ---------------          ---------------         ---------------              \  /  
+    ///            |       |       |        |       |       |       |       |       |              \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT | ----> |  30   |  NEXT | -------->    /\
+    ///            |       |       |        |       |       |       |       |       |             /  \  
+    ///             ---------------          ---------------         ---------------             /    \  
+    /// ```
+    /// #### shirt()
+    /// ```text
+    /// Cuando hacemos shirt el penultimo nodo de la lista se enlaza a la referencia siguiente del primer nodo de la lista para perder
+    /// el enlaze secuencial , eliminandolo de las referencias secuenciales de la siguiente manera.
+    /// 
+    ///                head --------------------↓  
+    ///             ---------------          ---------------         ---------------              \  /  
+    ///            |       |       |        |       |       |       |       |       |              \/
+    ///            |  10   |  NEXT | ---->  |   20  |  NEXT | ----> |  30   |  NEXT | -------->    /\
+    ///            |       |       |        |       |       |       |       |       |             /  \  
+    ///             ---------------          ---------------         ---------------             /    \  
+    ///               head -------------------↓
+    ///             ---------------         ---------------              \  /  
+    ///            |       |       |       |       |       |              \/
+    ///            |   20  |  NEXT | ----> |  30   |  NEXT | -------->    /\
+    ///            |       |       |       |       |       |             /  \  
+    ///             ---------------         ---------------             /    \
+    ///            
+    ///              head ↓
+    ///             ---------------        \  /  
+    ///            |       |       |        \/
+    ///            |   30  |  NEXT | ---->  /\
+    ///            |       |       |       /  \  
+    ///             ---------------       /    \ 
+    /// 
+    /// ```
+    pub fn shirt(&mut self) -> Result<i32 , String>{
+        if self.empty(){
+            return Err(String::from("La lista se encuentra vacia"));
+        }
+        let current: &mut Option<Box<NodeLink<i32>>> = &mut self.head;
+        if let Some(ref mut head) = current{
+            let removed_value = head.value;
+            if head.next.is_none(){
+                self.head = None;
+                self.size -= 1;
+                return Ok(removed_value);
+            }else {
+                self.head = head.next.take();
+                self.size -= 1;
+                return Ok(removed_value);
+            }
+        } 
+        Err(String::from("No se pudo eliminar el nodo"))
 
     }
     ///Hay que buscar el nodo previo a la primera ocurrencia y enlazarlo con el siguiente a la primera ocurrencia
@@ -201,7 +318,7 @@ mod tests{
     }
     #[test]
     fn add_values_to_list(){
-        let mut list = LinkedList::new();
+        let mut list: LinkedList<i32> = LinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
@@ -209,8 +326,32 @@ mod tests{
         assert_eq!(list.len() , 4 , "No coinciden los valores de prueba con espacio de la lista {}" , list.see_list().unwrap());
     }
     #[test]
+    fn delete_value_on_head(){
+        let mut list: LinkedList<i32> = LinkedList::new();
+        list.append(10);
+        list.append(20);
+        list.append(30);
+        list.append(40);
+        assert_eq!(list.shirt().unwrap() , 10);
+        assert_eq!(list.shirt().unwrap() , 20);
+        assert_eq!(list.shirt().unwrap() , 30);
+        assert_eq!(list.shirt().unwrap() , 40);
+    }
+    #[test]
+    fn delete_value_with_pop(){
+        let mut list: LinkedList<i32> = LinkedList::new();
+        list.append(10);
+        list.append(20);
+        list.append(30);
+        list.append(40);
+        assert_eq!(list.pop().unwrap() , 40);
+        assert_eq!(list.pop().unwrap() , 30);
+        assert_eq!(list.pop().unwrap() , 20);
+        assert_eq!(list.pop().unwrap() , 10);
+    }
+    #[test]
     fn remove_first_ocurrence_test(){
-        let mut list = LinkedList::new();
+        let mut list: LinkedList<i32> = LinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
@@ -225,6 +366,4 @@ mod tests{
         assert_eq!(list.remove_first_ocurrence(70).unwrap() , 70 , "No coincide el valor eliminado con el comparado");
         assert_eq!(list.len() , 4);
     }
-
-
 }
