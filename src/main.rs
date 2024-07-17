@@ -1,11 +1,21 @@
-use data_structures::LinkedList;
+use std::cell::RefCell;
+
 fn main() {
-    let mut linkedList: LinkedList<i32> = LinkedList::new();
-    linkedList.append(20);
-    linkedList.append(40);
-    linkedList.append(50);
-    linkedList.append(70);
-    //println!("Nodos:{:?}\nEspacio: {}\nVacia: {}" , linkedList , &linkedList.len() , &linkedList.empty());
-    let value = linkedList.pop().unwrap();
-    println!("{:?}" , linkedList);
+    let data = RefCell::new(5);
+
+    {
+        let r = data.borrow();
+        println!("data: {}", *r);
+    }
+
+    {
+        let mut w = data.borrow_mut();
+        *w += 1;
+    }
+
+    {
+        let r = data.borrow();
+        println!("data: {}", *r);
+    }
 }
+
