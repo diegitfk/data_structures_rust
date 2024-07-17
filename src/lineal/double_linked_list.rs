@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::rc::{Rc, Weak};
 use std::cell::{Ref, RefCell, RefMut};
 ///### Nodo doble
@@ -226,14 +225,82 @@ impl DoublyLinkedList<i32>{
     /// ```
     /// - _El `push_front` se hace desde `head`_
 
-    fn push_front(){
-        todo!("")
+    fn push_front(&mut self , value : i32){
+        if  self.empty(){
+            let new_node : Rc<RefCell<DoublyNode<i32>>> = Rc::new(RefCell::new(DoublyNode::new(value)));
+            self.head = Some(new_node); //head : |20|
+            self.tail = Some(self.head.as_ref().unwrap().clone()); //tail : |20|;
+            self.size +=1;
+        }else {
+            let new_node : Rc<RefCell<DoublyNode<i32>>> = Rc::new(RefCell::new(DoublyNode::new(value)));
+            if let Some(ref old_head) = self.head{
+                let mut properties_new_node: RefMut<DoublyNode<i32>> = new_node.borrow_mut(); //prestamo mutable 
+                let mut properties_old_head: RefMut<DoublyNode<i32>> = old_head.borrow_mut(); //prestamo mutable
+                properties_new_node.next = Some(old_head.clone()); //siguiente del nuevo es 
+                properties_old_head.prev = Some(Rc::downgrade(&new_node)); 
+            }
+            self.head = Some(new_node);
+            self.size += 1;
+        }
     }
     fn pop(&mut self) -> Result<i32 , String>{
         todo!("")
     }
     fn shirt(&mut self) -> Result<i32 , String>{
         todo!("")
+    }
+    ///La estructura actual de la lista asumiendo que existen nodos es la siguiente
+    /// ```rust 
+    /// Some(
+    ///     RefCell(
+    ///         value : DoublyNode{
+    ///                 prev : None , 
+    ///                 value : X , 
+    ///                 next : Some(
+    ///                     RefCell(
+    ///                         value : DoublyNode{
+    ///                                 prev : Some(Weak) , 
+    ///                                 value : Y , 
+    ///                                 next : Some(...)}))})
+    /// )
+    /// ```
+    /// 
+    fn print_list_directly(&self) -> Result<String , String>{
+        if self.empty(){
+            Err(String::from("La lista se encuentra vacia"))
+        }
+        else {
+            let mut string_list: String = String::new();
+            let mut current: Option<Rc<RefCell<DoublyNode<i32>>>> = self.head.clone(); //Recuerda si quieres multiples propietarios entonces has .clone()
+            string_list.push_str("Head-> ");
+            while let Some(current_node) = current{
+                let borrow_current: Ref<DoublyNode<i32>> = current_node.borrow();
+                println!("{}" , borrow_current.value);
+                let format_string = format!(" {} ->" , borrow_current.value);
+                string_list.push_str(&format_string);
+                current = borrow_current.next.clone();
+            }
+            string_list.push_str(" <- Tail");
+            Ok(string_list)
+        }
+    }
+    fn print_list_reversely(&self){
+        if self.empty(){
+            todo!("");
+        }else {
+            let mut string_list : String = String::new();
+            let mut current = self.tail.clone();
+            while let Some(current_node) = current{
+                let borrow_current : Ref<DoublyNode<i32>> = current_node.borrow();
+                println!("{}" , borrow_current.value);
+                if let Some(rc) = borrow_current.prev.clone(){
+                    let up = rc.upgrade();
+                    current = up;
+                }else {
+                    break;
+                }
+            }
+        }
     }
 }
 #[cfg(test)]
@@ -255,6 +322,51 @@ mod tests{
         doubly.push_back(40);
         doubly.push_back(50);
         println!("{:?}" , doubly);
+
+    }
+    #[test]
+    fn push_front_test(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_front(30);
+        doubly.push_front(40);
+        doubly.push_front(50);
+        println!("{:?}" , doubly);
+    }
+
+    #[test]
+    fn push_front_with_print_directly(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_front(30);
+        doubly.push_front(40);
+        doubly.push_front(50);//<-Head
+        println!("{}",doubly.print_list_directly().unwrap());
+
+    }
+    #[test]
+    fn push_back_with_print_directly(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_back(30); //<- Head
+        doubly.push_back(40);
+        doubly.push_back(50);
+        println!("{}",doubly.print_list_directly().unwrap());
+
+    }
+    #[test]
+    fn push_back_with_print_reversely(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_back(30);
+        doubly.push_back(40);
+        doubly.push_back(50); //<-Tail
+        doubly.print_list_reversely();
+
+    }
+    #[test]
+    fn push_front_with_print_reversely(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_front(30); //<-Tail
+        doubly.push_front(40);
+        doubly.push_front(50);
+        doubly.print_list_reversely();
 
     }
 }
