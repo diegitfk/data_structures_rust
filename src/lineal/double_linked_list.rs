@@ -80,23 +80,23 @@ impl DoublyNode<i32> {
 ///              ----------------------          ----------------------          ----------------------   
 /// ```
 #[derive(Debug)]
-struct DoublyLinkedList<T> {
+pub struct DoublyLinkedList<T> {
     head: Option<Rc<RefCell<DoublyNode<T>>>>,
     tail: Option<Rc<RefCell<DoublyNode<T>>>>,
     size: i32
 }
 impl DoublyLinkedList<i32>{
-    fn new() -> Self{
+    pub fn new() -> Self{
         Self{
             head : None , 
             tail : None, 
             size : 0
         }
     }
-    fn empty(&self) -> bool{
+    pub fn empty(&self) -> bool{
         self.head.is_none() && self.tail.is_none()
     }
-    fn len(&self) -> i32{
+    pub fn len(&self) -> i32{
        self.size
     }
     ///## Push Back Doblemente Enlazado
@@ -152,7 +152,7 @@ impl DoublyLinkedList<i32>{
     ///              ----------------------          ----------------------          ----------------------  
     /// ```
     /// - _El push back se hace desde tail_
-    fn push_back(&mut self , value : i32){
+    pub fn push_back(&mut self , value : i32){
         if  self.empty(){
             let new_node : Rc<RefCell<DoublyNode<i32>>> = Rc::new(RefCell::new(DoublyNode::new(value)));
             self.head = Some(new_node); //head : |20|
@@ -162,8 +162,8 @@ impl DoublyLinkedList<i32>{
         else{
             let new_node : Rc<RefCell<DoublyNode<i32>>> = Rc::new(RefCell::new(DoublyNode::new(value)));
             if let Some(ref old_tail) = self.tail{
-                let mut old_tail_properties = old_tail.borrow_mut();
-                let mut new_node_properties = new_node.borrow_mut();
+                let mut old_tail_properties: RefMut<DoublyNode<i32>> = old_tail.borrow_mut();
+                let mut new_node_properties: RefMut<DoublyNode<i32>> = new_node.borrow_mut();
                 old_tail_properties.next = Some(new_node.clone()); //next de la old_tail = nuevo nodo
                 //Propiedades del nodo inicial
                 new_node_properties.prev = Some(Rc::downgrade(&old_tail)); //Creamos una referencia debil al nodo anterior. None<-weak-|value|
@@ -225,7 +225,7 @@ impl DoublyLinkedList<i32>{
     /// ```
     /// - _El `push_front` se hace desde `head`_
 
-    fn push_front(&mut self , value : i32){
+    pub fn push_front(&mut self , value : i32){
         if  self.empty(){
             let new_node : Rc<RefCell<DoublyNode<i32>>> = Rc::new(RefCell::new(DoublyNode::new(value)));
             self.head = Some(new_node); //head : |20|
@@ -243,11 +243,191 @@ impl DoublyLinkedList<i32>{
             self.size += 1;
         }
     }
-    fn pop(&mut self) -> Result<i32 , String>{
-        todo!("")
+    ///## Pop_Back()
+    /// ```text
+    /// pop_back()
+    ///                       head ↓                                                         tail ↓
+    ///              ----------------------          ----------------------          ----------------------         
+    ///             |      |       |       | <----- |      |       |       | <----  |      |       |       | 
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | -----> | PREV |   30  |  NEXT | -----> None
+    ///             |      |       |       |        |      |       |       |        |      |       |       |
+    ///              ----------------------          ----------------------          ----------------------  
+    ///                     head ↓                         tail ↓
+    ///              ----------------------          ----------------------                  
+    ///             |      |       |       | <----- |      |       |       | <----  
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | ----->  None
+    ///             |      |       |       |        |      |       |       |        
+    ///              ----------------------          ---------------------- 
+    ///  pop_back() 
+    ///                       tail ↓
+    ///                       head ↓                  
+    ///              ----------------------                        
+    ///             |      |       |       |   
+    /// None <----  | PREV |  10   |  NEXT | ----->  None
+    ///             |      |       |       |              
+    ///              ----------------------                     
+    /// ```     
+    /// 
+    /// ### Casos de eliminación.
+    /// - `Caso 1`: _tail y head se encuentran apuntando al mismo nodo_ 
+    /// ```text
+    ///                 pop_back() 
+    ///                       tail ↓
+    ///                       head ↓                  
+    ///              ----------------------                        
+    ///             |      |       |       |   
+    /// None <----  | PREV |  10   |  NEXT | ----->  None
+    ///             |      |       |       |              
+    ///              ----------------------  
+    /// 
+    /// tail => None
+    /// head => None             
+    /// ```
+    /// _`Solucion: Debemos tomar el valor y asignar self.head y self.tail en None`_
+    /// - `Caso 2`: _tail y head no apuntan al mismo nodo en la lista_
+    /// ```text
+    ///                     pop_back()
+    ///                       head ↓                                                         tail ↓
+    ///              ----------------------          ----------------------          ----------------------         
+    ///             |      |       |       | <----- |      |       |       | <----  |      |       |       | 
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | -----> | PREV |   30  |  NEXT | -----> None
+    ///             |      |       |       |        |      |       |       |        |      |       |       |
+    ///              ----------------------          ----------------------          ----------------------  
+    /// ```
+    /// _`Solucion:`_
+    /// - Reasignar el puntero next del nodo previo a None
+    /// - Reasignar el puntero tail de la `doublylinkedlist` en el puntero previo al valor actual de tail.
+    /// - Disminuir el contador de nodos de la `doublylinkedlist`
+    /// ```text
+    ///                        head ↓                         tail ↓
+    ///              ----------------------          ----------------------                  
+    ///             |      |       |       | <----- |      |       |       |   
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | ----->  None
+    ///             |      |       |       |        |      |       |       |        
+    ///              ----------------------          ----------------------
+    /// 
+    /// ```
+    pub fn pop_back(&mut self) -> Result<i32, String>{
+        if self.empty(){
+            Err(String::from("La lista se encuentra vacia"))
+        }else {
+            let tail_prev: Option<Rc<RefCell<DoublyNode<i32>>>> = {
+                let tail_borrow: Ref<DoublyNode<i32>> = self.tail.as_ref().unwrap().borrow();
+                let tail_prev_option: Option<Rc<RefCell<DoublyNode<i32>>>> = {
+                    if let Some(prev_node) = &tail_borrow.prev{
+                        prev_node.upgrade()
+                    }else {
+                        None
+                    }
+                };
+                tail_prev_option
+            };
+            //si prev no es None entonces tail diverge en dirección de nodos con respecto a head.
+            if let Some(prev_node_to_tail) = tail_prev{
+                let mut properties_prev_node_to_tail: RefMut<DoublyNode<i32>> = prev_node_to_tail.borrow_mut();
+                let taking_current_tail: Rc<RefCell<DoublyNode<i32>>> = self.tail.take().unwrap();
+                let del_val: i32 = taking_current_tail.borrow().value;
+                properties_prev_node_to_tail.next = None;
+                self.tail = Some(prev_node_to_tail.clone());
+                self.size -= 1;
+                Ok(del_val)
+
+            }else {
+                //si prev es None se da el caso en el que tail y head se encuentran los dos posicionados en el mismo nodo.
+                let taking_current_tail: Rc<RefCell<DoublyNode<i32>>> = self.tail.take().unwrap();
+                let del_val: i32 = taking_current_tail.borrow().value;
+                self.head = None;
+                self.size -= 1;
+                Ok(del_val)
+            }
+        }
     }
-    fn shirt(&mut self) -> Result<i32 , String>{
-        todo!("")
+    ///## Pop()
+    /// ```text
+    /// pop()
+    ///                       head ↓                                                         tail ↓
+    ///              ----------------------          ----------------------          ----------------------         
+    ///             |      |       |       | <----- |      |       |       | <----  |      |       |       | 
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | -----> | PREV |   30  |  NEXT | -----> None
+    ///             |      |       |       |        |      |       |       |        |      |       |       |
+    ///              ----------------------          ----------------------          ----------------------  
+    ///                     head ↓                         tail ↓
+    ///              ----------------------          ----------------------                  
+    ///             |      |       |       | <----- |      |       |       | <----  
+    /// None <----  | PREV |  20   |  NEXT | -----> | PREV |   30  |  NEXT | ----->  None
+    ///             |      |       |       |        |      |       |       |        
+    ///              ----------------------          ---------------------- 
+    ///  pop() 
+    ///                       tail ↓
+    ///                       head ↓                  
+    ///              ----------------------                        
+    ///             |      |       |       |   
+    /// None <----  | PREV |  30   |  NEXT | ----->  None
+    ///             |      |       |       |              
+    ///              ----------------------                     
+    /// ``` 
+    /// ### Casos de eliminación
+    /// - _`Caso1`_: _head y tail se encuentran apuntando al mismo nodo._
+    /// ```text
+    /// pop_front() 
+    ///                       tail ↓
+    ///                       head ↓                  
+    ///              ----------------------                        
+    ///             |      |       |       |   
+    /// None <----  | PREV |  30   |  NEXT | ----->  None
+    ///             |      |       |       |              
+    ///              ----------------------   
+    /// head => None
+    /// tail => None           
+    /// ```
+    /// `Solución`: Debemos tomar el valor a eliminar y asignar self.head y self.tail en None
+    /// - _`Caso2`_: _`head y tail difieren en dirección`_
+    /// ```text
+    ///             pop_front()
+    ///                       head ↓                                                         tail ↓
+    ///              ----------------------          ----------------------          ----------------------         
+    ///             |      |       |       | <----- |      |       |       | <----  |      |       |       | 
+    /// None <----  | PREV |  10   |  NEXT | -----> | PREV |   20  |  NEXT | -----> | PREV |   30  |  NEXT | -----> None
+    ///             |      |       |       |        |      |       |       |        |      |       |       |
+    ///              ----------------------          ----------------------          ----------------------  
+    ///                     head ↓                         tail ↓
+    ///              ----------------------          ----------------------                  
+    ///             |      |       |       | <----- |      |       |       | <----  
+    /// None <----  | PREV |  20   |  NEXT | -----> | PREV |   30  |  NEXT | ----->  None
+    ///             |      |       |       |        |      |       |       |        
+    ///              ----------------------          ---------------------- 
+    /// ```
+    /// `Solución`:
+    /// - Reasignar el puntero prev del siguiente nodo en None
+    /// - Tomar el valor de head actual.
+    /// - Reasignar head al nodo que le sigue con respecto al actual de head.
+    /// - Disminuir la cantidad del total de nodos en 1
+    fn pop_front(&mut self) -> Result<i32 , String>{
+        if self.empty(){
+            Err(String::from("La lista se encuentra vacia"))
+        }
+        else {
+            let next_head: Option<Rc<RefCell<DoublyNode<i32>>>> = {
+                let current_head: &Rc<RefCell<DoublyNode<i32>>> = self.head.as_ref().unwrap();
+                let borrow_head: Ref<DoublyNode<i32>> = current_head.borrow();
+                if borrow_head.next.is_some(){
+                    borrow_head.next.clone()
+                }else {
+                    None
+                }
+            };
+            let del_node : i32;
+            let current_head_node: Rc<RefCell<DoublyNode<i32>>> = self.head.take().unwrap();
+            del_node = current_head_node.borrow().value;
+            if next_head.is_some(){
+                self.head = next_head;
+            }else {
+                self.head = None;
+                self.tail = None
+            }
+            self.size -= 1;
+            Ok(del_node)
+        }
     }
     ///La estructura actual de la lista asumiendo que existen nodos es la siguiente
     /// ```rust 
@@ -265,7 +445,7 @@ impl DoublyLinkedList<i32>{
     /// )
     /// ```
     /// 
-    fn print_list_directly(&self) -> Result<String , String>{
+    pub fn print_list_directly(&self) -> Result<String , String>{
         if self.empty(){
             Err(String::from("La lista se encuentra vacia"))
         }
@@ -276,7 +456,7 @@ impl DoublyLinkedList<i32>{
             while let Some(current_node) = current{
                 let borrow_current: Ref<DoublyNode<i32>> = current_node.borrow();
                 println!("{}" , borrow_current.value);
-                let format_string = format!(" {} ->" , borrow_current.value);
+                let format_string: String = format!(" {} ->" , borrow_current.value);
                 string_list.push_str(&format_string);
                 current = borrow_current.next.clone();
             }
@@ -284,12 +464,12 @@ impl DoublyLinkedList<i32>{
             Ok(string_list)
         }
     }
-    fn print_list_reversely(&self){
+    pub fn print_list_reversely(&self){
         if self.empty(){
             todo!("");
         }else {
             let mut string_list : String = String::new();
-            let mut current = self.tail.clone();
+            let mut current: Option<Rc<RefCell<DoublyNode<i32>>>> = self.tail.clone();
             while let Some(current_node) = current{
                 let borrow_current : Ref<DoublyNode<i32>> = current_node.borrow();
                 println!("{}" , borrow_current.value);
@@ -368,5 +548,51 @@ mod tests{
         doubly.push_front(50);
         doubly.print_list_reversely();
 
+    }
+    #[test]
+    fn pop_back_test_with_push_back(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_back(30);
+        doubly.push_back(50);
+        doubly.push_back(100); //<-Tail
+        for i in 1..=doubly.len(){
+            let data = doubly.pop_back().unwrap();
+            println!("{}" , data);
+        }
+    }
+    #[test]
+    fn pop_back_test_with_push_front(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_front(30); //<-Tail
+        doubly.push_front(50);
+        doubly.push_front(100);
+        for i in 1..=doubly.len(){
+            let data = doubly.pop_back().unwrap();
+            println!("{}" , data);
+        }
+    }
+    #[test]
+    fn pop_front_test_with_push_front(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_front(30); //<-Tail
+        doubly.push_front(50);
+        doubly.push_front(100);
+        for i in 1..=doubly.len(){
+            let data = doubly.pop_front().unwrap();
+            println!("{}" , data);
+        }
+        println!("{:?}" , doubly);
+    }
+    #[test]
+    fn pop_front_test_with_push_back(){
+        let mut doubly : DoublyLinkedList<i32> = DoublyLinkedList::new();
+        doubly.push_back(30); //<-Tail
+        doubly.push_back(50);
+        doubly.push_back(100);
+        for i in 1..=doubly.len(){
+            let data = doubly.pop_front().unwrap();
+            println!("{}" , data);
+        }
+        println!("{:?}" , doubly);
     }
 }
