@@ -1,5 +1,5 @@
-use std::ptr::read_unaligned;
-
+use num::Integer;
+use std::fmt::{Display , Debug};
 ///### Nodo simple
 /// Está es la estructura básica del nodo de una lista enlazada, este posee tolerancia opcional de tipo recursiva
 ///para poder tolerar el mismo tipo dentro de el.
@@ -30,7 +30,8 @@ pub struct LinkedList<T> {
     head: Option<Box<NodeLink<T>>>,
     size: i32,
 }
-impl LinkedList<i32> {
+impl<T> LinkedList<T>
+where T : Integer + Clone + Copy + Display + Debug{
     pub fn new() -> Self {
         Self {
             head: None,
@@ -65,8 +66,8 @@ impl LinkedList<i32> {
     /// 
     /// ```
     /// 
-    pub fn append(&mut self, value: i32) {
-        let new_node: Box<NodeLink<i32>> = Box::new(NodeLink { value, next: None });
+    pub fn append(&mut self, value: T) {
+        let new_node: Box<NodeLink<T>> = Box::new(NodeLink { value, next: None });
         match self.head {
             None => {
                 self.head = Some(new_node);
@@ -120,23 +121,23 @@ impl LinkedList<i32> {
     /// 
     /// ```
  
-    pub fn pop(&mut self) -> Result<i32 , String>{
+    pub fn pop(&mut self) -> Result<T , String>{
         if self.empty(){
             return Err(String::from("La lista se encuentra vacia"));
         }
         if let Some(ref mut node) = self.head{
             if node.next.is_none(){ //en el caso de que solamente sea el head en la lista
-                let remove_value: i32 = node.value;
+                let remove_value: T = node.value;
                 self.head = node.next.take();
                 self.size -= 1;
                 return Ok(remove_value);
             }
 
         }
-        let mut current: &mut Box<NodeLink<i32>> = self.head.as_mut().unwrap();
+        let mut current: &mut Box<NodeLink<T>> = self.head.as_mut().unwrap();
         while let Some(ref mut next) = current.next{
             if next.next.is_none(){
-                let last_one = current.next.take().unwrap();
+                let last_one: Box<NodeLink<T>> = current.next.take().unwrap();
                 return Ok(last_one.value);
             }
             current = current.next.as_mut().unwrap();
@@ -181,13 +182,13 @@ impl LinkedList<i32> {
     ///             ---------------       /    \ 
     /// 
     /// ```
-    pub fn shirt(&mut self) -> Result<i32 , String>{
+    pub fn shirt(&mut self) -> Result<T , String>{
         if self.empty(){
             return Err(String::from("La lista se encuentra vacia"));
         }
-        let current: &mut Option<Box<NodeLink<i32>>> = &mut self.head;
+        let current: &mut Option<Box<NodeLink<T>>> = &mut self.head;
         if let Some(ref mut head) = current{
-            let removed_value = head.value;
+            let removed_value: T = head.value;
             if head.next.is_none(){
                 self.head = None;
                 self.size -= 1;
@@ -233,13 +234,13 @@ impl LinkedList<i32> {
     ///             ---------------          ---------------         ---------------             /    \  
     ///                                                  |__________________________________________↑
     /// ```
-    pub fn remove_first_ocurrence(&mut self , value : i32) -> Result<i32 , String>{
+    pub fn remove_first_ocurrence(&mut self , value : T) -> Result<T , String>{
         if self.empty() { // Head is None -> False
             return Err(String::from("La lista está vacía"));
         }
         if let Some(_node) = &mut self.head{
             if _node.value == value{
-                let delete_node = _node.value;
+                let delete_node: T = _node.value;
                 match &_node.next {
                     None => {
                         self.head = None;
@@ -253,7 +254,7 @@ impl LinkedList<i32> {
                     }
                 }
             }
-        let mut current = &mut self.head;
+        let mut current: &mut Option<Box<NodeLink<T>>> = &mut self.head;
         while let Some(ref mut _node) = current{
             if let Some(_node_next) = &mut _node.next{
                 if _node_next.value == value{ //estamos a la mitad de la lista
@@ -276,11 +277,11 @@ impl LinkedList<i32> {
     }
     ///### Search
     ///El metodo search de LinkedList retorna una referencia inmutable al nodo que se encuentra en la lista.
-    pub fn search(&self, search_value: i32) -> Result<&NodeLink<i32>, bool> {
+    pub fn search(&self, search_value: T) -> Result<&NodeLink<T>, bool> {
         if self.empty() {
             Err(false)
         } else {
-            let mut current = &self.head;
+            let mut current: &Option<Box<NodeLink<T>>> = &self.head;
             while let Some(node) = &current {
                 if node.value == search_value {
                     return Ok(&node);
@@ -297,7 +298,7 @@ impl LinkedList<i32> {
                 "No se puede visualizar la lista porque se encuentra vacia!",
             ))
         } else {
-            let mut current = &self.head;
+            let mut current: &Option<Box<NodeLink<T>>> = &self.head;
             while let Some(node) = current {
                 println!("{:?}", node);
                 let format_string: String = format!(" {} ->", node.value);
