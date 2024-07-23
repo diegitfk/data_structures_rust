@@ -4,17 +4,10 @@ use std::cmp::Ordering;
 ///NodeTree<T>
 /// ```text
 ///              +----------------------+
-///              |      |       |       |
-///              | LEFT | VALUE | RIGHT |
-///              |      |       |       |
-///              +----------------------+
-///             /                        \
-///            /                         \
-///          |/_                         _\/
+///         |----| LEFT | VALUE | RIGHT |----|
+///         |    +----------------------+    |
 /// ```
-/// 
-/// 
-/// 
+ 
 #[derive(Debug)]
 struct NodeTree<T>{
     value : T,
@@ -62,6 +55,12 @@ where T : Integer + Clone + Copy + Display {
             Some(_) => self.left.as_mut()
             
         }
+    }
+    fn is_leaf(&self) -> bool{
+        self.left.is_none() && self.right.is_none()
+    }
+    fn have_one_children(&self) -> bool{
+        (self.left.is_some() && self.right.is_none()) || (self.left.is_none() && self.right.is_some())
     }
     
 }
@@ -113,7 +112,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     /// 
     /// ```
     /// Tip: Tenemos que iterar constantemente de root al siguiente nodo hasta encontrar un espacio adecuado
-    fn insert_node(&mut self , value : T){
+    fn insert_node_iterative(&mut self , value : T){
         let new_node: Option<Box<NodeTree<T>>> = Some(Box::new(NodeTree::new(value)));
         match self.root {
             None => {
@@ -157,8 +156,126 @@ where T : Integer + Clone + Copy + Display + Debug{
             Ok(current)
         }
     }
-    fn remove_node(){
-        todo!("")
+    //Obtenemos una referencia mutable al nodo
+    fn find_mut_node(&mut self , value : T) -> Result<Option<&mut Box<NodeTree<T>>> , String>{
+        Self::find_mut_recursive(&mut self.root, value)
+    }
+    fn find_mut_recursive(current_node : &mut Option<Box<NodeTree<T>>> , value : T) -> Result<Option<&mut Box<NodeTree<T>>> , String>{
+        match current_node{
+            None => Err(String::from("No se encuentra el nodo en el arbol")),
+            Some(node) => {
+                //Caso base: Encontramos el nodo
+                if node.value == value{
+                    return Ok(Some(node));
+                }
+                if value >= node.value{
+                    Self::find_mut_recursive(&mut node.right, value)
+                }else {
+                    Self::find_mut_recursive(&mut node.left, value)
+                }
+            }
+        }
+
+    }
+    ///### Obtención del padre de un nodo en el arbol
+    /// Este metodo del arbol permite obtener una referencia mutable al padre de un nodo en el arbol.
+    fn find_parent_for_node(&mut self , value : T) -> Result<&mut Box<NodeTree<T>> , String>{
+        Self::find_parent_to(&mut self.root, value)
+    }
+    fn find_parent_to(current_node : &mut Option<Box<NodeTree<T>>>, value : T) -> Result<&mut Box<NodeTree<T>> , String>{
+        //Casos base
+        match current_node {
+            None => {Err(String::from("No se encontro el nodo"))},
+            Some(node) => {
+                //Si el nodo es hijo derecho o Si el nodo es hijo izquierdo
+                if (node.right.as_ref().map_or(false, |n| n.value == value)) || (node.left.as_ref().map_or(false , |n| n.value == value)){
+                    return Ok(node); 
+                }
+                //Casos de Recursión
+                //Si el valor es mayor al valor del nodo actual
+                if value >= node.value{
+                    Self::find_parent_to(&mut node.right, value)
+                }else {
+                    Self::find_parent_to(&mut node.left, value)
+                }
+            } 
+        }
+    }
+    ///### Eliminar un nodo del arbol binario
+    /// Siempre y cuando la situación y estructura en tiempo de ejecución generada del arbol sea balanceada,
+    /// se garantiza que las eliminaciones se hacen en tiempo O(log(n)) en caso de que no sea la estructura ideal
+    /// se garantiza un tiempo O(n).
+    /// ### Casos de eliminación
+    /// - `Caso 1`: Eliminación de un nodo hoja o sin hijos
+    /// Si el estado del nodo es el siguiente:
+    /// ```text
+    ///                      |
+    ///                     del
+    ///             +-------------------+
+    ///         |---|LEFT | 100  | RIGHT|---|
+    ///            +--------------------+
+    /// 
+    /// ```
+    /// o sea su hijo tanto izquierdo como derecho son None entonces simplemente se remueve el nodo del arbol
+    /// o se asigna como tal el nodo en None.
+    /// y se disminuye el contador de nodos en el arbol
+    /// - `Caso 2`: Eliminación de un nodo con un solo hijo
+    /// Si el estado del nodo es el siguiente
+    ///```text
+    ///                          |
+    ///                         del
+    ///                 +-------------------+
+    ///             |---|LEFT | 100  | RIGHT|---|
+    ///                +--------------------+   |
+    ///                           +-------------------+
+    ///                       |---| LEFT | 200 | RIGHT|---|
+    ///                           +-------------------+ 
+    /// 
+    /// ```
+    /// En dicho caso se remplaza el valor del nodo hijo por el que se elimina
+    /// y se elimina el nodo hijo, para mantener la coherencia del arbol.
+    /// ```text
+    ///                          |
+    ///                 +-------------------+
+    ///             |---|LEFT | 200  | RIGHT|---|
+    ///                +--------------------+   |
+    ///                           +-------------------+
+    ///                       |---| LEFT | 100 | RIGHT|---|
+    ///                           +-------------------+ 
+    ///                                  ^-> None
+    /// ```
+    /// Esto hay que tenerlo en cuenta para el nodo izquierdo como el derecho.
+    /// 
+    /// - `Caso 3`: Eliminación de un nodo con dos hijos
+    /// 
+    /// 
+    /// 
+    fn remove_node(&mut self, value : T){
+        match self.find_mut_node(value){
+            Err(msg) => {},
+            Ok(node) =>{
+                match node {
+                    None => {},
+                    Some(node) =>{
+                        //Caso en el que nodo es hoja
+                        if node.is_leaf(){
+                            println!("El nodo {:?} es una Hoja" , node);
+                        }
+                        //Caso en que el nodo posee un hijo
+                        else if node.have_one_children(){
+                            println!("El nodo {:?}\n Es padre de un hijo!" , node);
+                        }
+                        //Caso en que el nodo posee dos hijos
+                        else {
+                            println!("El nodo {:?} es padre de dos hijos!" , node);
+                        }
+                    }
+                    
+                }
+
+            }
+
+        }        
     }
     /// ### Recorrido Inorder
     /// En el recorrido inorder se recorre primero recursivamente el subarbol izquierdo de la raiz, luego el nodo raiz
@@ -185,6 +302,18 @@ where T : Integer + Clone + Copy + Display + Debug{
             None => {}
         }
     }
+    /// ### Recorrido PostOrder
+    /// En el recorrido inorder se recorre primero recursivamente el subarbol derecho de la raiz, luego el nodo raiz
+    /// y por ultimo recursivamente el subarbol izquierdo del nodo raiz
+    /// ```text
+    ///                     2°------> root
+    ///                         +-------------------+
+    ///                     |---|LEFT | 100  | RIGHT|---|
+    ///                     |   +-------------------+  |
+    ///                    /\                         /\
+    ///           3°--->  / \             1°----->   / \ 
+    ///                  /__\                       /__\
+    /// ```
     fn postorder_tree(&self){
         Self::postorder(&self.root);
     }
@@ -223,16 +352,19 @@ mod tests{
     #[test]
     fn test_insert(){
         let mut tree : BinarySearchTree<i32> = BinarySearchTree::new();
-        tree.insert_node(30);
-        tree.insert_node(50);
-        tree.insert_node(20);
-        tree.insert_node(70);
-        tree.insert_node(90);
-        tree.insert_node(10);
+        tree.insert_node_iterative(30);
+        tree.insert_node_iterative(50);
+        tree.insert_node_iterative(20);
+        tree.insert_node_iterative(70);
+        tree.insert_node_iterative(90);
+        tree.insert_node_iterative(10);
         println!("------- INORDER --------");
         tree.inorder_tree();
         println!("------ POSTORDER -------");
         tree.postorder_tree();
+        tree.remove_node(90);
+        tree.remove_node(70);
+        tree.remove_node(30);
     }
 }
 
