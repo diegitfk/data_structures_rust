@@ -1,6 +1,7 @@
 use num::Integer;
 use std::fmt::{Debug, Display};
 use std::cmp::Ordering;
+use std::mem;
 ///NodeTree<T>
 /// ```text
 ///              +----------------------+
@@ -29,6 +30,12 @@ where T : Integer + Clone + Copy + Display {
     }
     fn left_is_none(&self) ->bool{
         self.left.is_none()
+    }
+    fn right_is_some(&self) -> bool{
+        self.right.is_some()
+    }
+    fn left_is_some(&self) -> bool{
+        self.left.is_some()
     }
 
     fn get_right(&self) -> Option<&Box<NodeTree<T>>>{
@@ -65,13 +72,13 @@ where T : Integer + Clone + Copy + Display {
     
 }
 #[derive(Debug)]
-struct BinarySearchTree<T>{
+pub struct BinarySearchTree<T>{
     root : Option<Box<NodeTree<T>>>,
     size : usize
 }
 impl <T> BinarySearchTree<T>
 where T : Integer + Clone + Copy + Display + Debug{
-    fn new() -> Self{
+    pub fn new() -> Self{
         Self{
             root : None, 
             size : 0
@@ -112,7 +119,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     /// 
     /// ```
     /// Tip: Tenemos que iterar constantemente de root al siguiente nodo hasta encontrar un espacio adecuado
-    fn insert_node_iterative(&mut self , value : T){
+    pub fn insert_node_iterative(&mut self , value : T){
         let new_node: Option<Box<NodeTree<T>>> = Some(Box::new(NodeTree::new(value)));
         match self.root {
             None => {
@@ -137,7 +144,7 @@ where T : Integer + Clone + Copy + Display + Debug{
             }
         }
     }
-    fn find_node(&self , value : T) -> Result<&Option<Box<NodeTree<T>>> , String> {
+    pub fn find_node(&self , value : T) -> Result<&Option<Box<NodeTree<T>>> , String> {
         let mut current = &self.root;
         while let Some(node) = current{
             if node.value == value{
@@ -157,29 +164,30 @@ where T : Integer + Clone + Copy + Display + Debug{
         }
     }
     //Obtenemos una referencia mutable al nodo
-    fn find_mut_node(&mut self , value : T) -> Result<Option<&mut Box<NodeTree<T>>> , String>{
+    pub fn find_mut_node(&mut self , value : T) -> Result<&mut Option<Box<NodeTree<T>>> , String>{
         Self::find_mut_recursive(&mut self.root, value)
     }
-    fn find_mut_recursive(current_node : &mut Option<Box<NodeTree<T>>> , value : T) -> Result<Option<&mut Box<NodeTree<T>>> , String>{
-        match current_node{
-            None => Err(String::from("No se encuentra el nodo en el arbol")),
-            Some(node) => {
-                //Caso base: Encontramos el nodo
-                if node.value == value{
-                    return Ok(Some(node));
-                }
-                if value >= node.value{
-                    Self::find_mut_recursive(&mut node.right, value)
-                }else {
-                    Self::find_mut_recursive(&mut node.left, value)
-                }
-            }
+    fn find_mut_recursive(current_node : &mut Option<Box<NodeTree<T>>> , value : T) -> Result<&mut Option<Box<NodeTree<T>>> , String>{
+        //Casos bases
+        //El arbol binario se encuentra vacio
+        if current_node.is_none(){
+            return Err(String::from("El arbol se encuentra vacio"));
+        }
+        if current_node.as_ref().map_or(false, |n| n.value == value){
+            Ok(current_node)
+        }
+        else if current_node.as_ref().map_or(false, |n| value >= n.value){
+            let right_node: &mut Box<NodeTree<T>> = current_node.as_mut().unwrap();
+            Self::find_mut_recursive(&mut right_node.right, value)
+        }else {
+            let left_node: &mut Box<NodeTree<T>> = current_node.as_mut().unwrap();
+            Self::find_mut_recursive(&mut left_node.left, value)
         }
 
     }
     ///### Obtención del padre de un nodo en el arbol
     /// Este metodo del arbol permite obtener una referencia mutable al padre de un nodo en el arbol.
-    fn find_parent_for_node(&mut self , value : T) -> Result<&mut Box<NodeTree<T>> , String>{
+    pub fn find_parent_for_node(&mut self , value : T) -> Result<&mut Box<NodeTree<T>> , String>{
         Self::find_parent_to(&mut self.root, value)
     }
     fn find_parent_to(current_node : &mut Option<Box<NodeTree<T>>>, value : T) -> Result<&mut Box<NodeTree<T>> , String>{
@@ -250,24 +258,97 @@ where T : Integer + Clone + Copy + Display + Debug{
     /// 
     /// 
     /// 
+    fn get_greater_left(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
+        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
+        println!("Buscando el minimo en el subarbol derecho");
+        let min_value: Option<T> = {
+            while let Some(ref mut unwrapping_node) = current_node{
+                if unwrapping_node.right_is_none(){
+                    return Some(unwrapping_node.value);
+                }
+                current_node = &mut unwrapping_node.left;
+            };
+            None
+        };
+        current_node.take();
+        min_value
+    }
+    fn get_smaller_right(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
+        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
+        println!("Buscando el maximo del subarbol izquierdo");
+        while let Some(ref mut unwrapping_node) = current_node{
+            if unwrapping_node.left_is_none(){
+                return Some(unwrapping_node.value);
+            }
+            current_node = &mut unwrapping_node.right;
+        };  
+        None
+    }
+    fn remove_node_by_value(node: &mut Option<Box<NodeTree<T>>>, value: &T) {
+        if let Some(ref mut boxed_node) = node {
+            if &boxed_node.value == value {
+                // Este es el nodo que queremos eliminar
+                if boxed_node.is_leaf() {
+                    *node = None;
+                } else if boxed_node.have_one_children() {
+                    if boxed_node.right_is_some() {
+                        *node = boxed_node.right.take();
+                    } else {
+                        *node = boxed_node.left.take();
+                    }
+                } else {
+                    // Este caso no debería ocurrir si get_greater_left y get_smaller_right
+                    // están implementados correctamente, pero lo manejamos por si acaso
+                    if let Some(replacement_value) = Self::get_smaller_right(&mut boxed_node.right) {
+                        boxed_node.value = replacement_value;
+                        Self::remove_node_by_value(&mut boxed_node.right, &replacement_value);
+                    }
+                }
+            } else if value < &boxed_node.value {
+                Self::remove_node_by_value(&mut boxed_node.left, value);
+            } else {
+                Self::remove_node_by_value(&mut boxed_node.right, value);
+            }
+        }
+    }
     fn remove_node(&mut self, value : T){
         match self.find_mut_node(value){
             Err(msg) => {},
             Ok(node) =>{
                 match node {
                     None => {},
-                    Some(node) =>{
-                        //Caso en el que nodo es hoja
-                        if node.is_leaf(){
-                            println!("El nodo {:?} es una Hoja" , node);
-                        }
-                        //Caso en que el nodo posee un hijo
-                        else if node.have_one_children(){
-                            println!("El nodo {:?}\n Es padre de un hijo!" , node);
-                        }
-                        //Caso en que el nodo posee dos hijos
-                        else {
-                            println!("El nodo {:?} es padre de dos hijos!" , node);
+                    Some(unwrap_node) =>{
+                        let del_value: T = unwrap_node.value;
+                        if unwrap_node.is_leaf(){
+                            *node = None;
+                            self.size -= 1;
+                            //del_value
+                        }else if unwrap_node.have_one_children(){
+                            //El unico hijo se encuentra a la derecha del nodo actual
+                            if unwrap_node.right_is_some(){
+                                unwrap_node.value = unwrap_node.right.as_ref().unwrap().value;
+                                unwrap_node.right = None;
+                                self.size -= 1;
+                            }
+                            //El unico hijo se encuentra a la izquierda del nodo actual
+                            else {
+                                unwrap_node.value = unwrap_node.left.as_ref().unwrap().value;
+                                unwrap_node.left = None;
+                                self.size -= 1                                
+                            }
+
+                        }else {
+                            //Falta eliminar los nodos predecesores y sucesores
+                            if let Some(value) = Self::get_greater_left(&mut unwrap_node.left){
+                                Self::remove_node_by_value(&mut unwrap_node.left, &value);
+                                unwrap_node.value = value;
+                                self.size -= 1;
+
+                            }else if let Some(value) = Self::get_smaller_right(&mut unwrap_node.right){
+                                Self::remove_node_by_value(&mut unwrap_node.left, &value);
+                                unwrap_node.value = value;
+                                self.size -= 1;
+                            }
                         }
                     }
                     
@@ -327,7 +408,7 @@ where T : Integer + Clone + Copy + Display + Debug{
             None => {}
             
         }
-    }
+    }//Caso en el que nodo es hoja
 }
 #[cfg(test)]
 mod tests{
@@ -355,16 +436,12 @@ mod tests{
         tree.insert_node_iterative(30);
         tree.insert_node_iterative(50);
         tree.insert_node_iterative(20);
+        tree.insert_node_iterative(40);
         tree.insert_node_iterative(70);
         tree.insert_node_iterative(90);
         tree.insert_node_iterative(10);
-        println!("------- INORDER --------");
-        tree.inorder_tree();
-        println!("------ POSTORDER -------");
-        tree.postorder_tree();
-        tree.remove_node(90);
-        tree.remove_node(70);
         tree.remove_node(30);
+        tree.inorder_tree();
     }
 }
 
