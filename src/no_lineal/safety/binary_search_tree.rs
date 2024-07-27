@@ -34,7 +34,7 @@ where T : Integer + Clone + Copy + Display {
     fn right_is_some(&self) -> bool{
         self.right.is_some()
     }
-    fn left_is_some(&self) -> bool{
+    fn left_is_some(&self) ->bool{
         self.left.is_some()
     }
 
@@ -77,12 +77,15 @@ pub struct BinarySearchTree<T>{
     size : usize
 }
 impl <T> BinarySearchTree<T>
-where T : Integer + Clone + Copy + Display + Debug{
+where T : Integer + Clone + Copy + Display + Debug + Ord{
     pub fn new() -> Self{
         Self{
             root : None, 
             size : 0
         }
+    }
+    pub fn empty(&self) -> bool{
+        self.root.is_none()
     }
     ///## Insert_Node
     /// La inserción en una arbol binario de busqueda posee un complejidad temporal de O(log(n)) y en el pero de los casos O(n)
@@ -97,7 +100,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     /// ```
     /// - `Caso 2`: El valor a insertar es mayor al nodo actual
     /// ```text
-    ///     insert_node(200)
+    ///     insert_node(200)20 passed; 0 fa
     ///                     root
     ///             +-------------------+
     ///         |---|LEFT | 100  | RIGHT|---|
@@ -142,6 +145,44 @@ where T : Integer + Clone + Copy + Display + Debug{
                 *current = new_node;
                 self.size += 1;
             }
+        }
+    }
+    ///Esta es una forma de generar una inserción de manera recursiva dentro de un arbol binario 
+    /// en rust, no difiere demasiado de la forma iterativo, pero a su manera los metodos
+    /// de demostración de dicha función para calcular la complejidad temporal se hacen por metodos
+    /// de inducción recursivos.
+    pub fn insert_node_recursibly(&mut self , value : T){
+        self.root = Self::insertion_recursibly(self.root.take(), value);
+        self.size += 1;
+
+    }
+    fn insertion_recursibly(actually_node : Option<Box<NodeTree<T>>> , value : T) -> Option<Box<NodeTree<T>>>{
+        let mut current_node = actually_node; //movemos la referencia a otra variable
+        match current_node {
+            None => {
+                current_node = Some(Box::new(NodeTree::new(value)));
+                current_node
+            },
+            Some(mut current_node_unwrapp) => {
+                match current_node_unwrapp.value.cmp(&value) {
+                    Ordering::Equal => {
+                        //No se hace nada en este caso debido a que ya existe el nodo en el arbol.
+                        todo!("Falta retornar un error en este caso");
+                        },
+                    Ordering::Greater => {
+                        current_node_unwrapp.left = Self::insertion_recursibly(current_node_unwrapp.left.take(), value);
+                        Some(current_node_unwrapp)
+                        
+                    },
+                    Ordering::Less => {
+                        current_node_unwrapp.right = Self::insertion_recursibly(current_node_unwrapp.right.take(), value);
+                        Some(current_node_unwrapp)
+                        
+                    }
+                }
+
+            }   
+            
         }
     }
     pub fn find_node(&self , value : T) -> Result<&Option<Box<NodeTree<T>>> , String> {
@@ -209,7 +250,56 @@ where T : Integer + Clone + Copy + Display + Debug{
             } 
         }
     }
-    ///### Eliminar un nodo del arbol binario
+    fn get_greater_left(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
+        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
+        println!("Buscando el minimo en el subarbol derecho");
+        while let Some(ref mut unwrapping_node) = current_node{
+            if unwrapping_node.right_is_none(){
+                return Some(unwrapping_node.value);
+            }
+            current_node = &mut unwrapping_node.left;
+        };
+        None
+    }
+    fn get_smaller_right(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
+        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
+        println!("Buscando el maximo del subarbol izquierdo");
+        while let Some(ref mut unwrapping_node) = current_node{
+            if unwrapping_node.left_is_none(){
+                return Some(unwrapping_node.value);
+            }
+            current_node = &mut unwrapping_node.right;
+        };  
+        None
+    }
+    fn remove_node_by_value(node: &mut Option<Box<NodeTree<T>>>, value: &T) {
+        if let Some(ref mut boxed_node) = node {
+            if &boxed_node.value == value {
+                // Este es el nodo que queremos eliminar
+                if boxed_node.is_leaf() {
+                    *node = None;
+                } else if boxed_node.have_one_children() {
+                    if boxed_node.right_is_some() {
+                        *node = boxed_node.right.take();
+                    } else {
+                        *node = boxed_node.left.take();
+                    }
+                } else {
+                    // Este caso no debería ocurrir si get_greater_left y get_smaller_right
+                    // están implementados correctamente, pero lo manejamos por si acaso
+                    if let Some(replacement_value) = Self::get_smaller_right(&mut boxed_node.right) {
+                        boxed_node.value = replacement_value;
+                        Self::remove_node_by_value(&mut boxed_node.right, &replacement_value);
+                    }
+                }
+            } else if value < &boxed_node.value {
+                Self::remove_node_by_value(&mut boxed_node.left, value);
+            } else {
+                Self::remove_node_by_value(&mut boxed_node.right, value);
+            }
+        }
+    }
+        ///### Eliminar un nodo del arbol binario
     /// Siempre y cuando la situación y estructura en tiempo de ejecución generada del arbol sea balanceada,
     /// se garantiza que las eliminaciones se hacen en tiempo O(log(n)) en caso de que no sea la estructura ideal
     /// se garantiza un tiempo O(n).
@@ -255,63 +345,33 @@ where T : Integer + Clone + Copy + Display + Debug{
     /// Esto hay que tenerlo en cuenta para el nodo izquierdo como el derecho.
     /// 
     /// - `Caso 3`: Eliminación de un nodo con dos hijos
-    /// 
-    /// 
-    /// 
-    fn get_greater_left(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
-        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
-        println!("Buscando el minimo en el subarbol derecho");
-        let min_value: Option<T> = {
-            while let Some(ref mut unwrapping_node) = current_node{
-                if unwrapping_node.right_is_none(){
-                    return Some(unwrapping_node.value);
-                }
-                current_node = &mut unwrapping_node.left;
-            };
-            None
-        };
-        current_node.take();
-        min_value
-    }
-    fn get_smaller_right(node : &mut Option<Box<NodeTree<T>>>) -> Option<T>{
-        let mut current_node: &mut Option<Box<NodeTree<T>>> = node;
-        println!("Buscando el maximo del subarbol izquierdo");
-        while let Some(ref mut unwrapping_node) = current_node{
-            if unwrapping_node.left_is_none(){
-                return Some(unwrapping_node.value);
-            }
-            current_node = &mut unwrapping_node.right;
-        };  
-        None
-    }
-    fn remove_node_by_value(node: &mut Option<Box<NodeTree<T>>>, value: &T) {
-        if let Some(ref mut boxed_node) = node {
-            if &boxed_node.value == value {
-                // Este es el nodo que queremos eliminar
-                if boxed_node.is_leaf() {
-                    *node = None;
-                } else if boxed_node.have_one_children() {
-                    if boxed_node.right_is_some() {
-                        *node = boxed_node.right.take();
-                    } else {
-                        *node = boxed_node.left.take();
-                    }
-                } else {
-                    // Este caso no debería ocurrir si get_greater_left y get_smaller_right
-                    // están implementados correctamente, pero lo manejamos por si acaso
-                    if let Some(replacement_value) = Self::get_smaller_right(&mut boxed_node.right) {
-                        boxed_node.value = replacement_value;
-                        Self::remove_node_by_value(&mut boxed_node.right, &replacement_value);
-                    }
-                }
-            } else if value < &boxed_node.value {
-                Self::remove_node_by_value(&mut boxed_node.left, value);
-            } else {
-                Self::remove_node_by_value(&mut boxed_node.right, value);
-            }
-        }
-    }
-    fn remove_node(&mut self, value : T){
+    /// ```text
+    ///         insert_node(90)
+    ///                                     root
+    ///                             +-------------------+
+    ///                         |---|LEFT | 100  | RIGHT|---|
+    ///                         |  +--------------------+   |
+    ///             +-----------------+             +-------------------+
+    ///         |---|LEFT | 90 | RIGHT|---|    |---| LEFT | 200 | RIGHT|---|
+    ///         |   +-----------------+   |    |   +-------------------+   |
+    ///                                   ↘   ↙                                  
+    ///                                      150
+    /// Buscamos el mayor del subarbol izquierdo o el menor del subarbol derecho
+    /// ```
+    ///     /// - `Caso 3`: Eliminación de un nodo con dos hijos
+    /// ```text
+    ///         insert_node(90)
+    ///                                     root
+    ///                             +-------------------+
+    ///                         |---|LEFT | 150  | RIGHT|---| <------------------|
+    ///                         |  +--------------------+   |                    |
+    ///             +-----------------+             +-------------------+        |
+    ///         |---|LEFT | 90 | RIGHT|---|    |---| LEFT | 200 | RIGHT|---|     |
+    ///         |   +-----------------+   |    |   +-------------------+   |     |
+    ///                                   ↘   ↙                                  |
+    ///                                      150 ---------delete and replace------
+    /// ```
+    pub fn remove_node(&mut self, value : T){
         match self.find_mut_node(value){
             Err(msg) => {},
             Ok(node) =>{
@@ -326,14 +386,28 @@ where T : Integer + Clone + Copy + Display + Debug{
                         }else if unwrap_node.have_one_children(){
                             //El unico hijo se encuentra a la derecha del nodo actual
                             if unwrap_node.right_is_some(){
-                                unwrap_node.value = unwrap_node.right.as_ref().unwrap().value;
-                                unwrap_node.right = None;
+                                let right_child = unwrap_node.right.as_mut().unwrap();
+                                unwrap_node.value = right_child.value;
+                                if right_child.right_is_some(){
+                                    unwrap_node.right = right_child.right.take();
+                                }else if right_child.left_is_some(){
+                                    unwrap_node.right = right_child.left.take();                             
+                                }else {
+                                    unwrap_node.right = None;
+                                }
                                 self.size -= 1;
                             }
                             //El unico hijo se encuentra a la izquierda del nodo actual
-                            else {
-                                unwrap_node.value = unwrap_node.left.as_ref().unwrap().value;
-                                unwrap_node.left = None;
+                            else if unwrap_node.left_is_some() {
+                                let left_child = unwrap_node.left.as_mut().unwrap();
+                                unwrap_node.value = left_child.value;
+                                if left_child.right_is_some(){
+                                    unwrap_node.left = left_child.right.take();
+                                }else if left_child.left_is_some() {
+                                    unwrap_node.left = left_child.left.take();
+                                }else {
+                                    unwrap_node.left = None;                                    
+                                }
                                 self.size -= 1                                
                             }
 
@@ -358,6 +432,156 @@ where T : Integer + Clone + Copy + Display + Debug{
 
         }        
     }
+        ///### Eliminar un nodo del arbol binario
+    /// Siempre y cuando la situación y estructura en tiempo de ejecución generada del arbol sea balanceada,
+    /// se garantiza que las eliminaciones se hacen en tiempo O(log(n)) en caso de que no sea la estructura ideal
+    /// se garantiza un tiempo O(n).
+    /// ### Casos de eliminación
+    /// - `Caso 1`: Eliminación de un nodo hoja o sin hijos
+    /// Si el estado del nodo es el siguiente:
+    /// ```text
+    ///                      |
+    ///                     del
+    ///             +-------------------+
+    ///         |---|LEFT | 100  | RIGHT|---|
+    ///            +--------------------+
+    /// 
+    /// ```
+    /// o sea su hijo tanto izquierdo como derecho son None entonces simplemente se remueve el nodo del arbol
+    /// o se asigna como tal el nodo en None.
+    /// y se disminuye el contador de nodos en el arbol
+    /// - `Caso 2`: Eliminación de un nodo con un solo hijo
+    /// Si el estado del nodo es el siguiente
+    ///```text
+    ///                          |
+    ///                         del
+    ///                 +-------------------+
+    ///             |---|LEFT | 100  | RIGHT|---|
+    ///                +--------------------+   |
+    ///                           +-------------------+
+    ///                       |---| LEFT | 200 | RIGHT|---|
+    ///                           +-------------------+ 
+    /// 
+    /// ```
+    /// En dicho caso se remplaza el valor del nodo hijo por el que se elimina
+    /// y se elimina el nodo hijo, para mantener la coherencia del arbol.
+    /// ```text
+    ///                          |
+    ///                 +-------------------+
+    ///             |---|LEFT | 200  | RIGHT|---|
+    ///                +--------------------+   |
+    ///                           +-------------------+
+    ///                       |---| LEFT | 100 | RIGHT|---|
+    ///                           +-------------------+ 
+    ///                                  ^-> None
+    /// ```
+    /// Esto hay que tenerlo en cuenta para el nodo izquierdo como el derecho.
+    /// 
+    /// - `Caso 3`: Eliminación de un nodo con dos hijos
+    /// ```text
+    ///         insert_node(90)
+    ///                                     root
+    ///                             +-------------------+
+    ///                         |---|LEFT | 100  | RIGHT|---|
+    ///                         |  +--------------------+   |
+    ///             +-----------------+             +-------------------+
+    ///         |---|LEFT | 90 | RIGHT|---|    |---| LEFT | 200 | RIGHT|---|
+    ///         |   +-----------------+   |    |   +-------------------+   |
+    ///                                   ↘   ↙                                  
+    ///                                      150
+    /// Buscamos el mayor del subarbol izquierdo o el menor del subarbol derecho
+    /// ```
+    ///     /// - `Caso 3`: Eliminación de un nodo con dos hijos
+    /// ```text
+    ///         insert_node(90)
+    ///                                     root
+    ///                             +-------------------+
+    ///                         |---|LEFT | 150  | RIGHT|---| <------------------|
+    ///                         |  +--------------------+   |                    |
+    ///             +-----------------+             +-------------------+        |
+    ///         |---|LEFT | 90 | RIGHT|---|    |---| LEFT | 200 | RIGHT|---|     |
+    ///         |   +-----------------+   |    |   +-------------------+   |     |
+    ///                                   ↘   ↙                                  |
+    ///                                      150 ---------delete and replace------
+    /// ```
+    pub fn remove_node_recursibly(&mut self , value : T){
+        self.root = Self::remove_recursibly(self.root.take(), value);
+        self.size -= 1;
+    }
+    fn remove_recursibly(node : Option<Box<NodeTree<T>>> , value : T) -> Option<Box<NodeTree<T>>>{
+        //En este closure entra el nodo izquierdo del nodo a eliminar como referencia mutable, para iterar hacia la derecha hasta que sea la derecha None
+        let find_greater_left = |n : &mut Option<Box<NodeTree<T>>>| -> Option<T> {
+            let mut current = n;
+            while let Some(unwrap_node) = current{
+                if unwrap_node.right.is_none(){
+                    return Some(unwrap_node.value);
+                }
+                current = &mut unwrap_node.right;
+            }
+            None
+        };
+        let find_less_right = |n : &mut Option<Box<NodeTree<T>>>| -> Option<T> {
+            let mut current = n;
+            while let Some(unwrap_node) = current{
+                if unwrap_node.left_is_none(){
+                    return Some(unwrap_node.value);
+                }
+                current = &mut unwrap_node.left;
+            }
+            None
+        };
+            match node {
+                None => {
+                    todo!("Retornar un error porque el arbol se encuentra vacio");
+                },
+                Some(mut node_unw) => {
+                    match node_unw.value.cmp(&value) {
+                        Ordering::Equal => {
+                            //Encontramos el nodo
+                            let deleted_node = match *node_unw {
+                                NodeTree { value, left: None, right: None } => None,
+                                NodeTree { value, left: Some(left_node), right: None } => {
+                                    node_unw.value = left_node.value;
+                                    node_unw.left = None;
+                                    Some(node_unw)
+                                },
+                                NodeTree { value, left: None, right: Some(right_node) } => {
+                                    node_unw.value = right_node.value;
+                                    node_unw.right = None;
+                                    Some(node_unw)
+                                },
+                                NodeTree { value, ref mut left , ref mut  right } => {
+                                    if let Some(n) = find_greater_left(left){
+                                        *left = Self::remove_recursibly(left.take(), n);
+                                        node_unw.value = n;
+                                    }
+                                    else if let Some(n) = find_less_right(right){
+                                        *right = Self::remove_recursibly(right.take(), n);
+                                        node_unw.value = n;
+                                    }
+                                    Some(node_unw)
+                                }
+                            };
+                            deleted_node
+                        },
+                        Ordering::Greater => {
+                            //Caso recursivo, aun no encontramos el nodo y el valor del nodo actual es mayor
+                            //Se debe hacer recursión al subarbol izquierdo.
+                            node_unw.left = Self::remove_recursibly(node_unw.left.take(), value);
+                            Some(node_unw)
+                        },
+                        Ordering::Less => {
+                            //Caso recursivo, aun no encontramos el nodo y el valor es menor
+                            //Se debe hacer recursión al subarbol derecho.
+                            node_unw.right = Self::remove_recursibly(node_unw.right.take(), value);
+                            Some(node_unw)
+
+                        }
+                    }
+                }
+                
+            }
+    } 
     /// ### Recorrido Inorder
     /// En el recorrido inorder se recorre primero recursivamente el subarbol izquierdo de la raiz, luego el nodo raiz
     /// y por ultimo recursivamente el subarbol derecho del nodo raiz
@@ -370,7 +594,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///           1°--->  / \             3°----->   / \ 
     ///                  /__\                       /__\
     /// ```
-    fn inorder_tree(&self){
+    pub fn inorder_tree(&self){
         Self::inorder(&self.root);
     }
     fn inorder(node : &Option<Box<NodeTree<T>>>){
@@ -395,7 +619,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///           3°--->  / \             1°----->   / \ 
     ///                  /__\                       /__\
     /// ```
-    fn postorder_tree(&self){
+    pub fn postorder_tree(&self){
         Self::postorder(&self.root);
     }
     fn postorder(node : &Option<Box<NodeTree<T>>>){
@@ -441,7 +665,38 @@ mod tests{
         tree.insert_node_iterative(90);
         tree.insert_node_iterative(10);
         tree.remove_node(30);
-        tree.inorder_tree();
+        assert_eq!(tree.size , 6);
+        tree.remove_node(50);
+        assert_eq!(tree.size , 5);
+        tree.remove_node(20);
+        assert_eq!(tree.size , 4);
+        tree.remove_node(40);
+        assert_eq!(tree.size , 3);
+        tree.remove_node(70);
+        assert_eq!(tree.size , 2);
+        tree.remove_node(90);
+        assert_eq!(tree.size , 1);
+        tree.remove_node(10);
+        println!("{:?}" , tree);
+        assert_eq!(tree.empty() , true);
+        assert_eq!(tree.size , 0);
+    }
+    #[test]
+    fn test_insert_recursive(){
+        let mut tree : BinarySearchTree<i32> = BinarySearchTree::new();
+        tree.insert_node_recursibly(100);
+        tree.insert_node_recursibly(90);
+        tree.insert_node_recursibly(120);
+        tree.insert_node_recursibly(80);
+        tree.insert_node_recursibly(92);
+        tree.remove_node_recursibly(100);
+        tree.remove_node_recursibly(90);
+        tree.remove_node_recursibly(120);
+        tree.remove_node_recursibly(80);
+        tree.remove_node_recursibly(92);
+        println!("{:?}" , tree);
+        assert_eq!(tree.empty() , true);
+        assert_eq!(tree.size , 0);
     }
 }
 
