@@ -26,3 +26,4 @@ pub use lineal::safety::{
     double_linked_list::DoublyLinkedList , 
     linked_list::LinkedList
 };
+pub use no_lineal::safety::{binary_search_tree::BinarySearchTree};
