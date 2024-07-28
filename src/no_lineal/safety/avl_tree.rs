@@ -159,7 +159,7 @@
 use num::Integer;
 use std::{cmp::Ordering, fmt::{Debug, Display}, isize};
 #[derive(Debug)]
-struct AVLNode<T>{
+pub struct AVLNode<T>{
     left : Option<Box<AVLNode<T>>>,
     value : T,
     right : Option<Box<AVLNode<T>>>,
@@ -169,7 +169,7 @@ impl <T> AVLNode<T>
 where T : Integer + Clone + Copy + Display + Debug + Ord {
     ///En teoria todos los nodos insertados, se insertan como Hojas, es por ello que no necesitamos especificar realmente un
     ///calculo complejo de la altura. quedese con esta idea, cada nodo creado es una Hoja.
-    fn new(value : T) -> Self{
+    pub fn new(value : T) -> Self{
         Self { 
             left: None, 
             value, 
@@ -177,43 +177,21 @@ where T : Integer + Clone + Copy + Display + Debug + Ord {
             height : 0
         }
     }
-    pub fn height(&self , node : &Option<Box<AVLNode<T>>>) -> isize{
-        match node {
-            None => { //Caso Base: El nodo en el arbol es nulo
-                -1
-            },
-            Some(n) => { //Caso Recursivo: Retornamos la altura del nodo
-                n.height
-            }
-            
-        }
-    }
-    //Esta función define la altura del nodo en el arbol acorde a sus subarboles.
-    pub fn update_height(&mut self , node : &mut Option<Box<AVLNode<T>>>){
-        match node {
-            None => {},
-            Some(n) => {
-                let height_left = self.height(&n.left);
-                let height_right = self.height(&n.right);
-                n.height = *[height_left, height_right].iter().max().unwrap() + 1;
-            }
-        }
-    }
 }
 #[derive(Debug)]
-struct AVLTree<T>{
+pub struct AVLTree<T>{
     root : Option<Box<AVLNode<T>>>,
     size : usize 
 }
 impl <T> AVLTree<T> 
 where T : Integer + Clone + Copy + Display + Debug + Ord{
-    fn new() -> Self{
+    pub fn new() -> Self{
         Self{
             root : None,
             size : 0
         }
     }
-    pub fn height(node : &mut Option<Box<AVLNode<T>>>) -> isize{
+    fn height(node : &mut Option<Box<AVLNode<T>>>) -> isize{
         match node {
             None => { //Caso Base: El nodo en el arbol es nulo
                 -1
@@ -225,7 +203,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
     }
     //Esta función define la altura del nodo en el arbol acorde a sus subarboles.
-    pub fn update_height_node(node : &mut Option<Box<AVLNode<T>>>){
+    fn update_height_node(node : &mut Option<Box<AVLNode<T>>>){
         match node {
             None => {},
             Some(n) => {
@@ -246,43 +224,54 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
 
     ///Esta función recibe como parametros el nodo desbalanceado, para ejecutar una rotación simple hacia la derecha
     ///de balance.s
-    pub fn simple_rotation_right(mut node : Option<Box<AVLNode<T>>>){
-        match node{
-            None => {},
+    fn simple_rotation_right(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        match unbalanced_node{
+            None => None,
             Some(ref mut n) => {
                 let mut left_child = n.left.take(); //Nodo izquierdo
-                let split_subtree = left_child.as_mut().map_or_else(
-                    || {
-                        None
-                    }, //Si left es None, no hay subarbol derecho 
-                    |some_node: &mut Box<AVLNode<T>>| -> Option<Box<AVLNode<T>>> { //si left es some retorna el Opcionalmente el subarbol derecho
-                        some_node.right.take()
-                    }
-                );
+                let split_subtree = left_child.as_mut().and_then(|some_node: &mut Box<AVLNode<T>>| -> Option<Box<AVLNode<T>>> {some_node.right.take()});
                 //Si el subarbol derecho es some al nodo desbalanceado le asignamos en el puntero izquierdo el subarbol
-                if split_subtree.is_some(){
-                    n.left = split_subtree;
-                }else {
-                    n.left = None; //Sino asignamos el puntero izquierdo en None.
-                }
+                n.left = split_subtree;
                 //Si left_child es Some, asignamos left_child.right en el nodo desbalanceado
                 if let Some(ref mut node_left) = left_child{
-                    node_left.right = node;
+                    node_left.right = unbalanced_node;
                     Self::update_height_node(&mut node_left.right); //Actualizamos al nodo desbalanceado.
                 }
-                println!("{:?}" , left_child);
+                Self::update_height_node(&mut left_child);
+                left_child //Se retorna el nodo que ocupa el lugar del nodo que recibimos debido a que lo rotamos,
+                //Con ello en la reasignación el padre apuntara a este.
             }
         }
     }
-    fn simple_rotation_left(mut node : Option<Box<AVLNode<T>>>){
+    fn simple_rotation_left(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        match unbalanced_node{
+            None => None,
+            Some(ref mut n) => {
+                let mut right_child = n.right.take();
+                let split_tree = right_child.as_mut().and_then(|node_unwp: &mut Box<AVLNode<T>>|-> Option<Box<AVLNode<T>>> {node_unwp.left.take()});
+                n.right = split_tree;
+                if let Some(ref mut right_node) = right_child{
+                    right_node.left = unbalanced_node;
+                    Self::update_height_node(&mut right_node.left);
+                }
+                Self::update_height_node(&mut right_child);
+                right_child
+            }
+
+        }
 
     }
-    fn right_left_rotation(){
+    fn right_left_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        todo!("primero se debe de crear la documentación respectiva, Por hacer")
 
     }
-    fn left_right_rotation(){
+    fn left_right_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        todo!("primero se debe de crear la documentación respectiva, Por hacer")
 
     }
+    ///Un metodo de la implementación que permite hacer una inserción recursiva, dicho metodo es el encargado de implementar
+    ///toda la logica dentro del arbol para el balance de mismo, esta función garantiza una capa de abstracción que mantiene 
+    /// el arbol totalmente balanceado.
     pub fn insert_node(&mut self , value : T){
         self.root = Self::insert_recursive(self.root.take(), value);
         self.size += 1;
@@ -344,6 +333,7 @@ mod tests{
         tree.insert_node(50); //están todos los arboles requeridos
         tree.insert_node(40);
         tree.insert_node(60);
-        AVLTree::simple_rotation_right(tree.root.take());
+        let node_rotate: Option<Box<AVLNode<i32>>> = AVLTree::simple_rotation_right(tree.root.take());
+        println!("{:?}" , &node_rotate);
     }
 }

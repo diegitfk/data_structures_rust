@@ -52,7 +52,7 @@ use num::Integer;
 /// 
 
 #[derive(Debug)]
-struct DoublyNode<T> {
+pub struct DoublyNode<T> {
     prev: Option<Weak<RefCell<DoublyNode<T>>>>, //Me permite mutar a traves de Weak mediante el metodo upgrade que devuelve un Rc<T> con RefCell<NodeDoubly>
     value: T,
     next: Option<Rc<RefCell<DoublyNode<T>>>> //Referencia en heap compartida, aumenta strong_count a medida que aumenta la lista enlazada hacia el siguiente nodo y disminuye al eliminar nodos
