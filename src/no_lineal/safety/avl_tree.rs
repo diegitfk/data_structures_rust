@@ -191,7 +191,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             size : 0
         }
     }
-    fn height(node : &mut Option<Box<AVLNode<T>>>) -> isize{
+    pub(crate) fn height(node : &mut Option<Box<AVLNode<T>>>) -> isize{
         match node {
             None => { //Caso Base: El nodo en el arbol es nulo
                 -1
@@ -203,7 +203,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
     }
     //Esta función define la altura del nodo en el arbol acorde a sus subarboles.
-    fn update_height_node(node : &mut Option<Box<AVLNode<T>>>){
+    pub(crate) fn update_height_node(node : &mut Option<Box<AVLNode<T>>>){
         match node {
             None => {},
             Some(n) => {
@@ -213,7 +213,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             }
         }
     }
-    fn balance_factor(node : &mut Option<Box<AVLNode<T>>>) -> isize{
+    pub(crate) fn balance_factor(node : &mut Option<Box<AVLNode<T>>>) -> isize{
         match node {
             None =>{todo!("")},
             Some(n) => {
@@ -222,9 +222,103 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
     }
 
-    ///Esta función recibe como parametros el nodo desbalanceado, para ejecutar una rotación simple hacia la derecha
-    ///de balance.s
-    fn simple_rotation_right(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+    /// Realiza una rotación simple a la derecha en un nodo desbalanceado de un árbol AVL.
+    ///
+    /// La rotación a la derecha se utiliza para balancear el árbol cuando se detecta un desbalance
+    /// en el subárbol izquierdo del nodo desbalanceado.
+    ///
+    /// # Parámetros
+    ///
+    /// - `node`: `Option<Box<AVLNode<T>>>` - El nodo desbalanceado en el que se debe realizar la rotación
+    ///   a la derecha. Este nodo es del tipo `Option<Box<AVLNode<T>>>`, donde `AVLNode<T>` es una
+    ///   estructura que representa un nodo en el árbol AVL.
+    ///
+    /// # Retorno
+    ///
+    /// - `Option<Box<AVLNode<T>>>` - El nuevo nodo raíz después de realizar la rotación a la derecha.
+    ///   Este nodo es del tipo `Option<Box<AVLNode<T>>>`.
+    ///
+    /// # Ejemplo de uso
+    ///
+    /// ```rust
+    /// let mut tree = AVLTree::new();
+    /// tree.insert_node(30);
+    /// tree.insert_node(20);
+    /// tree.insert_node(10);
+    ///
+    /// println!("{:?}", tree.root);
+    ///
+    /// let new_root = AVLTree::right_rotation(tree.root.take());
+    ///
+    /// println!("{:?}", new_root);
+    /// ```
+    ///
+    /// # Caso Simple: Estructura antes de la rotación
+    ///
+    /// El árbol AVL antes de la rotación tiene la siguiente estructura:
+    ///
+    /// ```
+    ///     30
+    ///    /
+    ///   20
+    ///  /
+    /// 10
+    /// ```
+    ///
+    /// # Proceso de la Rotación a la Derecha (Caso Simple)
+    ///
+    /// 1. **Realización de la rotación a la derecha:**
+    ///
+    ///    Se realiza una rotación simple a la derecha en el nodo `30`:
+    ///
+    ///    - El nodo `20` se convierte en la nueva raíz.
+    ///    - El nodo `30` se convierte en el hijo derecho de `20`.
+    ///    - El subárbol izquierdo de `30` (si existe) se convierte en el subárbol derecho de `20`.
+    ///
+    ///    La estructura del árbol después de la rotación será:
+    ///
+    ///    ```
+    ///      20
+    ///     /  \
+    ///    10   30
+    ///    ```
+    ///
+    /// # Caso Complejo: Estructura antes de la rotación con Subárboles
+    ///
+    /// Si el árbol tiene subárboles en los nodos involucrados, la estructura puede ser:
+    ///
+    /// ```
+    ///      30
+    ///     /
+    ///    20
+    ///   /  \
+    /// 10   25
+    ///        \
+    ///        27
+    /// ```
+    ///
+    /// # Proceso de la Rotación a la Derecha (Caso Complejo)
+    ///
+    /// 1. **Realización de la rotación a la derecha:**
+    ///
+    ///    Se realiza una rotación simple a la derecha en el nodo `30`:
+    ///
+    ///    - El nodo `20` se convierte en la nueva raíz.
+    ///    - El nodo `30` se convierte en el hijo derecho de `20`.
+    ///    - El subárbol izquierdo de `30` (en este caso, `25`) se convierte en el subárbol derecho de `20`.
+    ///    - Los subárboles del nodo `25` se mantienen como están.
+    ///
+    ///    La estructura del árbol después de la rotación será:
+    ///
+    ///```
+    ///      20
+    ///     /  \
+    ///    10   30
+    ///         / \
+    ///        25  27
+    /// ```
+
+    pub(crate) fn simple_rotation_right(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
         match unbalanced_node{
             None => None,
             Some(ref mut n) => {
@@ -243,7 +337,102 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             }
         }
     }
-    fn simple_rotation_left(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+    /// Realiza una rotación simple a la izquierda en un nodo desbalanceado de un árbol AVL.
+    ///
+    /// La rotación a la izquierda se utiliza para balancear el árbol cuando se detecta un desbalance
+    /// en el subárbol derecho del nodo desbalanceado.
+    ///
+    /// # Parámetros
+    ///
+    /// - `node`: `Option<Box<AVLNode<T>>>` - El nodo desbalanceado en el que se debe realizar la rotación
+    ///   a la izquierda. Este nodo es del tipo `Option<Box<AVLNode<T>>>`, donde `AVLNode<T>` es una
+    ///   estructura que representa un nodo en el árbol AVL.
+    ///
+    /// # Retorno
+    ///
+    /// - `Option<Box<AVLNode<T>>>` - El nuevo nodo raíz después de realizar la rotación a la izquierda.
+    ///   Este nodo es del tipo `Option<Box<AVLNode<T>>>`.
+    ///
+    /// # Ejemplo de uso
+    ///
+    /// ```rust
+    /// let mut tree = AVLTree::new();
+    /// tree.insert_node(10);
+    /// tree.insert_node(20);
+    /// tree.insert_node(30);
+    ///
+    /// println!("{:?}", tree.root);
+    ///
+    /// let new_root = AVLTree::left_rotation(tree.root.take());
+    ///
+    /// println!("{:?}", new_root);
+    /// ```
+    ///
+    /// # Caso Simple: Estructura antes de la rotación
+    ///
+    /// El árbol AVL antes de la rotación tiene la siguiente estructura:
+    ///
+    /// ```
+    ///     10
+    ///       \
+    ///        20
+    ///          \
+    ///           30
+    /// ```
+    ///
+    /// # Proceso de la Rotación a la Izquierda (Caso Simple)
+    ///
+    /// 1. **Realización de la rotación a la izquierda:**
+    ///
+    ///    Se realiza una rotación simple a la izquierda en el nodo `10`:
+    ///
+    ///    - El nodo `20` se convierte en la nueva raíz.
+    ///    - El nodo `10` se convierte en el hijo izquierdo de `20`.
+    ///    - El subárbol derecho de `10` (si existe) se convierte en el subárbol izquierdo de `20`.
+    ///
+    ///    La estructura del árbol después de la rotación será:
+    ///
+    ///    ```
+    ///      20
+    ///     /  \
+    ///    10   30
+    ///    ```
+    ///
+    /// # Caso Complejo: Estructura antes de la rotación con Subárboles
+    ///
+    /// Si el árbol tiene subárboles en los nodos involucrados, la estructura puede ser:
+    ///
+    /// ```
+    ///      10
+    ///        \
+    ///         20
+    ///        /  \
+    ///       15   25
+    ///             \
+    ///             30
+    /// ```
+    ///
+    /// # Proceso de la Rotación a la Izquierda (Caso Complejo)
+    ///
+    /// 1. **Realización de la rotación a la izquierda:**
+    ///
+    ///    Se realiza una rotación simple a la izquierda en el nodo `10`:
+    ///
+    ///    - El nodo `20` se convierte en la nueva raíz.
+    ///    - El nodo `10` se convierte en el hijo izquierdo de `20`.
+    ///    - El subárbol derecho de `10` (si existe) se convierte en el subárbol izquierdo de `20`.
+    ///    - Los subárboles del nodo `25` se mantienen como están.
+    ///
+    ///    La estructura del árbol después de la rotación será:
+    ///
+    ///    ```
+    ///      20
+    ///     /  \
+    ///    10   25
+    ///      \    \
+    ///      15   30
+    ///    ```
+    pub(crate) fn simple_rotation_left(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
         match unbalanced_node{
             None => None,
             Some(ref mut n) => {
@@ -261,13 +450,251 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
 
     }
-    fn right_left_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
-        todo!("primero se debe de crear la documentación respectiva, Por hacer")
+    /// Realiza una rotación doble derecha-izquierda (right-left) en un nodo desbalanceado de un árbol AVL.
+    ///
+    /// La rotación derecha-izquierda se utiliza para balancear el árbol cuando se detecta un desbalance
+    /// en el subárbol derecho del nodo desbalanceado.
+    ///
+    /// # Parámetros
+    ///
+    /// - `node`: `Option<Box<AVLNode<T>>>` - El nodo desbalanceado en el que se debe realizar la rotación
+    ///   derecha-izquierda. Este nodo es del tipo `Option<Box<AVLNode<T>>>`, donde `AVLNode<T>` es una
+    ///   estructura que representa un nodo en el árbol AVL.
+    ///
+    /// # Retorno
+    ///
+    /// - `Option<Box<AVLNode<T>>>` - El nuevo nodo raíz después de realizar la rotación derecha-izquierda.
+    ///   Este nodo es del tipo `Option<Box<AVLNode<T>>>`.
+    ///
+    /// # Ejemplo de uso
+    ///
+    /// ```rust
+    ///     let mut tree : AVLTree<i32> = AVLTree::new();
+    ///     tree.insert_node(100);
+    ///     tree.insert_node(120);
+    ///     tree.insert_node(110);
+    ///     tree.insert_node(130);
+    ///     tree.insert_node(115);
+    ///     tree.insert_node(109);
+    ///     println!("{:?}", tree.root);
+    ///     let new_root : Option<Box<AVLNode<i32>>> = AVLTree::right_left_rotation(tree.root.take());
+    ///     println!("{:?}", new_root);
+    /// ```
+    ///
+    /// # Estructura antes de la rotación
+    ///
+    /// El árbol AVL antes de la rotación tiene la siguiente estructura:
+    ///
+    /// ```
+    ///         100
+    ///           \
+    ///           120
+    ///          /  \
+    ///        110  130
+    ///        / \
+    ///      109 115
+    /// ```
+    ///
+    /// # Proceso de la rotación derecha-izquierda
+    ///
+    /// 1. **Rotación simple a la derecha en el subárbol derecho:**
+    ///
+    ///    Se realiza una rotación simple a la derecha en el nodo `120`:
+    ///
+    ///    ```
+    ///         100
+    ///           \
+    ///           110
+    ///          /  \
+    ///        109  120
+    ///             /
+    ///           115
+    ///             \
+    ///             130
+    ///    ```
+    ///
+    /// 2. **Rotación simple a la izquierda en el nodo desbalanceado:**
+    ///
+    ///    Se realiza una rotación simple a la izquierda en el nodo `100`:
+    ///
+    ///    ```
+    ///         110
+    ///        /  \
+    ///      100  120
+    ///      /    / \
+    ///    109  115 130
+    ///    ```
+    pub(crate) fn right_left_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        let right_child = unbalanced_node.as_mut().and_then(|n| {n.right.take()});
+        let balance_right_node = Self::simple_rotation_right(right_child);
+        //Se reasigna la mutacion del balance del hijo derecha al nodo desbalanceado en right
+        match unbalanced_node {
+            None => {},
+            Some(ref mut node) => {
+                node.right = balance_right_node;
+            }
+        }
+        let new_root = Self::simple_rotation_left(unbalanced_node);
+        new_root
 
     }
-    fn left_right_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
-        todo!("primero se debe de crear la documentación respectiva, Por hacer")
+    /// Realiza una rotación izquierda-derecha en un nodo desbalanceado de un árbol AVL.
+    ///
+    /// La rotación izquierda-derecha se utiliza para balancear el árbol cuando se detecta un desbalance
+    /// en el subárbol izquierdo del nodo desbalanceado, y dentro de este subárbol izquierdo, hay un
+    /// desbalance en el subárbol derecho.
+    ///
+    /// # Parámetros
+    ///
+    /// - `unbalanced_node`: `Option<Box<AVLNode<T>>>` - El nodo desbalanceado en el que se debe realizar la
+    ///   rotación izquierda-derecha. Este nodo es del tipo `Option<Box<AVLNode<T>>>`, donde `AVLNode<T>`
+    ///   es una estructura que representa un nodo en el árbol AVL.
+    ///
+    /// # Retorno
+    ///
+    /// - `Option<Box<AVLNode<T>>>` - El nuevo nodo raíz después de realizar la rotación izquierda-derecha.
+    ///   Este nodo es del tipo `Option<Box<AVLNode<T>>>`.
+    ///
+    /// # Ejemplo de uso
+    ///
+    /// ```rust
+    /// let mut tree = AVLTree::new();
+    /// tree.insert_node(30);
+    /// tree.insert_node(10);
+    /// tree.insert_node(40);
+    /// tree.insert_node(9);
+    /// tree.insert_node(20);
+    ///
+    /// println!("Antes de la rotación: {:?}", tree.root);
+    ///
+    /// let new_root = AVLTree::left_right_rotation(tree.root.take());
+    ///
+    /// println!("Después de la rotación: {:?}", new_root);
+    /// ```
+    ///
+    /// # Caso Simple: Estructura antes de la rotación
+    ///
+    /// El árbol AVL antes de la rotación tiene la siguiente estructura:
+    ///
+    /// ```
+    ///     30
+    ///    /
+    ///   10
+    ///    \
+    ///     20
+    /// ```
+    ///
+    /// # Proceso de la Rotación Izquierda-Derecha (Caso Simple)
+    ///
+    /// 1. **Rotación Simple a la Izquierda en el Hijo Izquierdo**:
+    ///    - Se realiza una rotación simple a la izquierda en el nodo `10`, cuyo hijo derecho es `20`.
+    ///    - Esto convierte a `20` en la nueva raíz del subárbol izquierdo, con `10` como su hijo izquierdo.
+    ///
+    ///    La estructura después de la rotación a la izquierda en `10` es:
+    ///
+    /// ```
+    ///       20
+    ///      /
+    ///     10
+    ///    /
+    ///   30
+    /// ```
+    ///
+    /// 2. **Rotación Simple a la Derecha en el Nodo Desbalanceado**:
+    ///    - Luego, se realiza una rotación simple a la derecha en el nodo `30`
+    ///    - El resultado es el nuevo árbol equilibrado con `20` como la nueva raíz.
+    ///
+    ///    La estructura final del árbol después de la rotación será:
+    ///
+    ///```
+    ///      20
+    ///     /  \
+    ///    10   30
+    ///```
+    ///
+    /// # Caso Complejo: Estructura antes de la rotación con Subárboles
+    ///
+    /// Si el árbol tiene subárboles en los nodos involucrados, la estructura puede ser:
+    ///
+    ///```
+    ///     30
+    ///    /  \
+    ///   10   40
+    ///  /  \
+    /// 9   20
+    ///```
+    ///
+    /// # Proceso de la Rotación Izquierda-Derecha (Caso Complejo)
+    ///
+    /// 1. **Rotación Simple a la Izquierda en el Hijo Izquierdo**:
+    ///    - Se realiza una rotación simple a la izquierda en el nodo `10`, cuyo hijo derecho es `20`.
+    ///    - Esto convierte a `20` en la nueva raíz del subárbol izquierdo, con `10` como su hijo izquierdo.
+    ///
+    ///    La estructura después de la rotación a la izquierda en `10` es:
+    ///
+    ///```
+    ///       20
+    ///      /  \
+    ///     10   30
+    ///    /     \
+    ///   9      40
+    ///```
+    ///
+    /// 2. **Rotación Simple a la Derecha en el Nodo Desbalanceado**:
+    ///    - Luego, se realiza una rotación simple a la derecha en el nodo `30`
+    ///    - El resultado es el nuevo árbol equilibrado con `20` como la nueva raíz.
+    ///
+    ///    La estructura final del árbol después de la rotación será:
+    ///
+    ///```
+    ///      20
+    ///     /  \
+    ///    10   30
+    ///   /     \
+    ///  9      40
+    ///```
+    pub(crate) fn left_right_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        let left_child = unbalanced_node.as_mut().and_then(|n| {n.left.take()});
+        let balance_left_node = Self::simple_rotation_left(left_child);
+        //Se reasigna la mutacion del balance del hijo derecha al nodo desbalanceado en right
+        match unbalanced_node {
+            None => {},
+            Some(ref mut node) => {
+                node.left = balance_left_node;
+            }
+        }
+        let new_root = Self::simple_rotation_right(unbalanced_node);
+        new_root
 
+    }
+    pub(crate) fn rebalance(mut node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
+        let balance_factor : isize = Self::balance_factor(&mut node);
+        if balance_factor == 2{
+            println!("Cargado hacia la izquierda");
+            let left_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.left))});
+            if let Some(balance_child) = left_child_balance_factor{
+                if balance_child == 1{ //simple rotation right
+                    node = Self::simple_rotation_right(node.take());
+                }else if balance_child == -1 { //left_right_rotation
+                    node = Self::left_right_rotation(node.take());
+                }
+
+            }
+        }else if balance_factor == -2 {
+            println!("Cargado hacia la derecha");
+            let right_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.right))});
+            if let Some(balance_child) = right_child_balance_factor{
+                if balance_child == 1{ //simple rotation left
+                    println!("Hijo cargado a la izquierda");
+                    node = Self::right_left_rotation(node.take());
+
+                }else if balance_child == -1 {//right_left_rotation
+                    println!("Hijo cargadp a la derecha");
+                    node = Self::simple_rotation_left(node.take());
+                }
+            }
+        }
+        node
     }
     ///Un metodo de la implementación que permite hacer una inserción recursiva, dicho metodo es el encargado de implementar
     ///toda la logica dentro del arbol para el balance de mismo, esta función garantiza una capa de abstracción que mantiene 
@@ -276,7 +703,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         self.root = Self::insert_recursive(self.root.take(), value);
         self.size += 1;
     }
-    fn insert_recursive(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
+    pub(crate) fn insert_recursive(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
         match node {
             None => {
             //Caso base donde insertamos el nodo
@@ -289,18 +716,25 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                         n.left = Self::insert_recursive(n.left.take(), value);
                         Self::update_height_node(&mut n.left);
                         Self::update_height_node(&mut node);
-                        println!("{}" , Self::balance_factor(&mut node));
-                        node
                     },
                     Ordering::Less => { //Caso Recursivo
                         n.right = Self::insert_recursive(n.right.take(), value);
                         Self::update_height_node(&mut n.right); //Actualización de la altura del nodo
                         Self::update_height_node(&mut node); //Actualización de la altura del nodo
-                        println!("{}" , Self::balance_factor(&mut node));
-                        node
                     }
                 }
+                Self::rebalance(node)
             }            
+        }
+    }
+    pub fn inorder_tree(&self){
+        Self::inorder_recursive(&self.root);
+    }
+    fn inorder_recursive(node : &Option<Box<AVLNode<T>>>){
+        if let Some(node_unw) = node{
+            Self::inorder_recursive(&node_unw.left);
+            println!("{}" , node_unw.value);
+            Self::inorder_recursive(&node_unw.right);
         }
     }
 
@@ -311,10 +745,10 @@ mod tests{
     #[test]
     fn test_insertion(){
         let mut tree: AVLTree<i32> = AVLTree::new();
-        tree.insert_node(100);
-        tree.insert_node(50);
-        tree.insert_node(40);
-        println!("{:?}" , tree);
+        for i in vec![10 , 20 , 30 , 40 , 50 , 60].iter(){
+            tree.insert_node(*i);
+        }
+        tree.inorder_tree();
     }
     #[test]
     fn test_simple_rotation_right(){
@@ -335,5 +769,84 @@ mod tests{
         tree.insert_node(60);
         let node_rotate: Option<Box<AVLNode<i32>>> = AVLTree::simple_rotation_right(tree.root.take());
         println!("{:?}" , &node_rotate);
+    }
+    #[test]
+    fn test_simple_rotation_left(){
+        let mut tree: AVLTree<i32> = AVLTree::new();
+        tree.insert_node(100);
+        tree.insert_node(150); //left_child no posee sub arbol derecho
+        tree.insert_node(160);
+        AVLTree::simple_rotation_left(tree.root.take());
+        tree.insert_node(100);
+        tree.insert_node(150); //left_child posee sub arbol derecho
+        tree.insert_node(160);
+        tree.insert_node(155);
+        AVLTree::simple_rotation_left(tree.root.take());
+        tree.insert_node(100);
+        tree.insert_node(150);
+        tree.insert_node(160); //están todos los arboles requeridos
+        tree.insert_node(159);
+        tree.insert_node(170);
+        let node_rotate: Option<Box<AVLNode<i32>>> = AVLTree::simple_rotation_left(tree.root.take());
+        println!("{:?}" , &node_rotate);
+
+    }
+    #[test]
+    fn test_right_left_rotation(){
+        let mut tree : AVLTree<i32> = AVLTree::new();
+        tree.insert_node(100);
+        tree.insert_node(120);
+        tree.insert_node(110);
+        //println!("{:?}" , tree.root);
+        let mut new_node = AVLTree::right_left_rotation(tree.root.take());
+        //println!("{:?}" , new_node);
+        tree.insert_node(100);
+        tree.insert_node(120);
+        tree.insert_node(110);
+        tree.insert_node(130);
+        //println!("{:?}" , tree.root);
+        new_node = AVLTree::right_left_rotation(tree.root.take());
+        //println!("{:?}" , new_node);
+        tree.insert_node(100);
+        tree.insert_node(120);
+        tree.insert_node(110);
+        tree.insert_node(130);
+        tree.insert_node(115);
+        tree.insert_node(109);
+        println!("{:?}" , tree.root);
+        new_node = AVLTree::right_left_rotation(tree.root.take());
+        println!("{:?}" , new_node);
+    }
+    #[test]
+    fn test_left_right_rotation() {
+        // Crear un árbol AVL desbalanceado que requiere una rotación izquierda-derecha
+        let mut tree: AVLTree<i32> = AVLTree::new();
+        tree.insert_node(30);
+        tree.insert_node(10);
+        tree.insert_node(20); // Inserción que causa el desbalance
+        tree.insert_node(9);
+        tree.insert_node(40);
+        //          30
+        //         / \ 
+        //       10  40
+        //      /  \
+        //     9   20
+        // Imprimir la estructura del árbol antes de la rotación
+        println!("Antes de la rotación: {:?}", tree.root);
+
+        // Aplicar la rotación izquierda-derecha
+        let new_root: Option<Box<AVLNode<i32>>> = AVLTree::left_right_rotation(tree.root.take());
+
+        // Imprimir la estructura del árbol después de la rotación
+        println!("Después de la rotación: {:?}", new_root);
+
+        // Verificar la estructura del árbol después de la rotación
+        // Esperamos que la estructura del árbol sea:
+        //         20
+        //        / \
+        //      10   30
+        //      /     \
+        //     9      40
+ 
     }
 }
