@@ -1,3 +1,46 @@
+//! ### Sobre los Árboles de Búsqueda Binarios (BST)
+//! Un árbol de búsqueda binario (BST) es una estructura de datos en forma de árbol en la que cada nodo tiene como máximo dos hijos, denominados "izquierdo" y "derecho". Cada nodo cumple con la siguiente propiedad:
+//! - Todos los nodos en el subárbol izquierdo de un nodo tienen claves menores que la clave del nodo.
+//! - Todos los nodos en el subárbol derecho de un nodo tienen claves mayores que la clave del nodo.
+//!
+//! ### Propiedades de los BST
+//! - **Inserción:** La inserción en un BST sigue la regla de que si la clave es menor que la clave del nodo actual, se inserta en el subárbol izquierdo; de lo contrario, en el subárbol derecho.
+//! - **Búsqueda:** La búsqueda sigue una lógica similar a la inserción, comparando la clave buscada con la clave del nodo actual y desplazándose hacia el subárbol izquierdo o derecho según corresponda.
+//! - **Eliminación:** La eliminación puede ser más complicada, especialmente cuando el nodo a eliminar tiene dos hijos, requiriendo la reorganización del árbol para mantener las propiedades del BST.
+//!
+//! ### Ejemplo de un BST
+//! Supongamos que insertamos los valores en el siguiente orden: 30, 35,40, 60, 80. El árbol resultante sería:
+//! ```
+//!                 +-------------------+
+//!             |---|LEFT | 30  | RIGHT|---|
+//!                +--------------------+   |
+//!                               +-------------------+
+//!                           |---| LEFT | 35 | RIGHT|---|
+//!                               +-------------------+ 
+//!                                                    +-------------------+
+//!                                                |---| LEFT | 40 | RIGHT|---|
+//!                                                    +-------------------+ 
+//!                                                                     +-------------------+
+//!                                                                 |---| LEFT | 60 | RIGHT|---|
+//!                                                                     +-------------------+ 
+//!                                                                                           +-------------------+
+//!                                                                                       |---| LEFT | 80 | RIGHT|---|
+//!                                                                                           +-------------------+ 
+//! ```
+//!
+//! ### Problemas Potenciales de los BST
+//! Un BST puede degenerar en una lista enlazada si los valores se insertan en un orden que mantiene el árbol desbalanceado, lo que lleva a una complejidad temporal O(n) para las operaciones de búsqueda, inserción y eliminación.
+//! ```
+//!                         10
+//!                           \
+//!                            20
+//!                              \
+//!                               30
+//!                                 \
+//!                                  40
+//! ```
+//! ### Comparación con Otros Tipos de Árboles
+//! Los BST estándar pueden tener problemas de desbalanceo, lo que afecta su rendimiento. Variantes como los árboles AVL y los árboles rojo-negro aplican técnicas adicionales para mantener el balance del árbol, garantizando tiempos de operación más predecibles y eficientes.
 use num::Integer;
 use std::fmt::{Debug, Display};
 use std::cmp::Ordering;

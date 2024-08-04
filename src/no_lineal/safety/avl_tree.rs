@@ -727,6 +727,47 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             }            
         }
     }
+    fn remove_node(&mut self , value : T){
+        self.root = Self::remove_recursibly(self.root.take(), value);
+        self.size -= 1;
+    }
+    fn remove_recursibly(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
+        match node{
+            None => {todo!("")},
+            Some(ref mut n) =>{
+                match n.value.cmp(&value){
+                    Ordering::Equal => {
+                        match (&mut n.left, &mut n.right){
+                            (None , None) => {},
+                            (Some(left_node) , None) => {},
+                            (None , Some(right_node)) =>{},
+                            (Some(left_node) , Some(right_node)) => {}
+                        }
+                    },
+                    Ordering::Greater => {
+                        n.left = Self::remove_recursibly(n.left.take(), value);
+                    },
+                    Ordering::Less => {
+                        n.right = Self::remove_recursibly(n.right.take(), value);
+                    }  
+                }
+                Self::rebalance(node)
+            }
+        }
+    }
+    pub fn search(&self , value : T) -> Option<T>{
+        let mut current_node = &self.root;
+        while let Some(current) = current_node{
+            if value == current.value{
+                break;
+            }else if value > current.value {
+                current_node = &current.right;
+            }else {
+                current_node = &current.left;
+            }
+        }
+        current_node.as_ref().and_then(|n| {Some(n.value)})
+    }
     pub fn inorder_tree(&self){
         Self::inorder_recursive(&self.root);
     }
@@ -745,10 +786,11 @@ mod tests{
     #[test]
     fn test_insertion(){
         let mut tree: AVLTree<i32> = AVLTree::new();
-        for i in vec![10 , 20 , 30 , 40 , 50 , 60].iter(){
+        for i in vec![10 , 20 , 30 , 40 , 50 , 60 , 70 , 80 , 90 , 1_00].iter(){
             tree.insert_node(*i);
         }
         tree.inorder_tree();
+        println!("{:?}" , &tree.root);
     }
     #[test]
     fn test_simple_rotation_right(){
@@ -848,5 +890,15 @@ mod tests{
         //      /     \
         //     9      40
  
+    }
+    #[test]
+    fn test_remove_on_tree(){
+        let mut tree : AVLTree<i32> = AVLTree::new();
+        for i in vec![10 , 20 , 30 , 40 , 50 , 60 , 70 , 80 , 90 , 1_00].iter(){
+            tree.insert_node(*i);
+        }
+        tree.remove_node(100);
+        println!("{:?}" , tree);
+
     }
 }

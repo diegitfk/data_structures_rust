@@ -16,7 +16,7 @@ pub struct NodeLink<T> {
     value: T,
     next: Option<Box<NodeLink<T>>>,
 }
-///### LinkedList
+///### SinglyLinkedList
 /// Esta estructura compone la opcionalidad de un nodo almacenado en heap y linkea los nodos, de manera logica.
 ///```text
 ///             ---------------          ---------------              
@@ -26,11 +26,11 @@ pub struct NodeLink<T> {
 ///             ---------------          ---------------            
 /// ```
 #[derive(Debug)]
-pub struct LinkedList<T> {
+pub struct SinglyLinkedList<T> {
     head: Option<Box<NodeLink<T>>>,
     size: i32,
 }
-impl<T> LinkedList<T>
+impl<T> SinglyLinkedList<T>
 where T : Integer + Clone + Copy + Display + Debug{
     pub fn new() -> Self {
         Self {
@@ -315,11 +315,11 @@ mod tests{
     use super::*;
     #[test]
     fn correct_creation(){
-        let mut list : LinkedList<i32> = LinkedList::new();
+        let mut list : SinglyLinkedList<i32> = SinglyLinkedList::new();
     }
     #[test]
     fn add_values_to_list(){
-        let mut list: LinkedList<i32> = LinkedList::new();
+        let mut list: SinglyLinkedList<i32> = SinglyLinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
@@ -328,7 +328,7 @@ mod tests{
     }
     #[test]
     fn delete_value_on_head(){
-        let mut list: LinkedList<i32> = LinkedList::new();
+        let mut list: SinglyLinkedList<i32> = SinglyLinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
@@ -340,7 +340,7 @@ mod tests{
     }
     #[test]
     fn delete_value_with_pop(){
-        let mut list: LinkedList<i32> = LinkedList::new();
+        let mut list: SinglyLinkedList<i32> = SinglyLinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
@@ -352,7 +352,7 @@ mod tests{
     }
     #[test]
     fn remove_first_ocurrence_test(){
-        let mut list: LinkedList<i32> = LinkedList::new();
+        let mut list: SinglyLinkedList<i32> = SinglyLinkedList::new();
         list.append(10);
         list.append(20);
         list.append(30);
