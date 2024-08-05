@@ -805,10 +805,22 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
         None
     }
-    ///Llamado recursivo desde la raiz para hacer un recorrido inorder
+    /// ### Recorrido Inorder
+    /// En el recorrido inorder se recorre primero recursivamente el subarbol izquierdo de la raiz, luego el nodo raiz
+    /// y por ultimo recursivamente el subarbol derecho del nodo raiz
+    /// ```text
+    ///                     2°------> root
+    ///                         +-------------------+
+    ///                     |---|LEFT | 100  | RIGHT|---|
+    ///                     |   +-------------------+  |
+    ///                    /\                         /\
+    ///           1°--->  / \             3°----->   / \ 
+    ///                  /__\                       /__\
+    /// ```
     pub fn inorder_tree(&self){
         Self::inorder_recursive(&self.root);
     }
+
     pub(crate) fn inorder_recursive(node : &Option<Box<AVLNode<T>>>){
         if let Some(node_unw) = node{
             Self::inorder_recursive(&node_unw.left);
@@ -816,12 +828,59 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             Self::inorder_recursive(&node_unw.right);
         }
     }
+    /// ### Recorrido PostOrder
+    /// En el recorrido inorder se recorre primero recursivamente el subarbol derecho de la raiz, luego el nodo raiz
+    /// y por ultimo recursivamente el subarbol izquierdo del nodo raiz
+    /// ```text
+    ///                     3°------> root
+    ///                         +-------------------+
+    ///                     |---|LEFT | 100  | RIGHT|---|
+    ///                     |   +-------------------+  |
+    ///                    /\                         /\
+    ///           1°--->  / \             2°----->   / \ 
+    ///                  /__\                       /__\
+    /// ```
+    pub fn postorder_tree(&self){
+        Self::postorder_recursive(&self.root);
+
+    }
+    pub(crate) fn postorder_recursive(node : &Option<Box<AVLNode<T>>>){
+        if let Some(n) = node{
+            Self::postorder_recursive(&n.left);
+            Self::postorder_recursive(&n.right);
+            println!("{}" , n.value);
+        }
+    }
+    /// ### Recorrido Preorder
+    /// En el recorrido preorder se recorre primero el nodo raíz, luego recursivamente el subárbol izquierdo de la raíz,
+    /// y por último recursivamente el subárbol derecho de la raíz.
+    /// ```text
+    ///                     1°------> root
+    ///                         +-------------------+
+    ///                     |---|LEFT | 100  | RIGHT|---|
+    ///                     |   +-------------------+  |
+    ///                    /\                         /\
+    ///           2°--->  / \             3°----->   / \ 
+    ///                  /__\                       /__\
+    /// ```
+    pub fn preorder_tree(&self){
+        Self::preorder_recursive(&self.root);
+    }
+    pub(crate) fn preorder_recursive(node : &Option<Box<AVLNode<T>>>){
+        if let Some(n) = node{
+            println!("{}" , n.value);
+            Self::preorder_recursive(&n.left);
+            Self::preorder_recursive(&n.right);
+        }
+
+    }
+
     ///Llamado recursivo que verifica la propiedad del factor de balance [-1;1]
     pub(crate) fn is_avl(&mut self){
         Self::verify_property_avl(&mut self.root);
     }
     //Llamado recursivo que activa la panic! macro cuando un nodo no cumple con AVL
-    pub(crate) fn verify_property_avl(node: &mut Option<Box<AVLNode<T>>>) -> bool{
+    pub(crate) fn verify_property_avl(node: &mut Option<Box<AVLNode<T>>>){
         let balance_factor_current_node = Self::balance_factor(node);
         if let Some(n) = node{
             Self::verify_property_avl(&mut n.left);
@@ -830,10 +889,6 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         if balance_factor_current_node >= 2{
             panic!("No cumple la propiedad AVL");
         }
-        else {
-            true
-        }
-
     }
 
 }
@@ -975,6 +1030,6 @@ mod tests{
         nodes.iter().for_each(|n| {
             tree.remove_node(*n);
             tree.is_avl();
-        })
+        });
     }
 }

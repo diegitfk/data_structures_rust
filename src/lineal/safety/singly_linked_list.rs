@@ -138,6 +138,7 @@ where T : Integer + Clone + Copy + Display + Debug{
         while let Some(ref mut next) = current.next{
             if next.next.is_none(){
                 let last_one: Box<NodeLink<T>> = current.next.take().unwrap();
+                self.size -= 1;
                 return Ok(last_one.value);
             }
             current = current.next.as_mut().unwrap();
@@ -349,6 +350,7 @@ mod tests{
         assert_eq!(list.pop().unwrap() , 30);
         assert_eq!(list.pop().unwrap() , 20);
         assert_eq!(list.pop().unwrap() , 10);
+        println!("{:?}" ,  list);
     }
     #[test]
     fn remove_first_ocurrence_test(){

@@ -5,3 +5,17 @@ edition = "2021"
 
 [dependencies]
 num = "0.4"
+[dev-dependencies]
+criterion = "0.5"
+[[bench]]
+name = "lineal_safe"
+harness = false
+[[bench]]
+name = "lineal_unsafe"
+harness = false
+[[bench]]
+name = "no_lineal_safe"
+harness = false
+[[bench]]
+name = "no_lineal_unsafe"
+harness = false
