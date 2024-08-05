@@ -525,8 +525,8 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     ///    109  115 130
     ///    ```
     pub(crate) fn right_left_rotation(mut unbalanced_node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
-        let right_child = unbalanced_node.as_mut().and_then(|n| {n.right.take()});
-        let balance_right_node = Self::simple_rotation_right(right_child);
+        let right_child: Option<Box<AVLNode<T>>> = unbalanced_node.as_mut().and_then(|n| {n.right.take()});
+        let balance_right_node: Option<Box<AVLNode<T>>> = Self::simple_rotation_right(right_child);
         //Se reasigna la mutacion del balance del hijo derecha al nodo desbalanceado en right
         match unbalanced_node {
             None => {},
@@ -534,7 +534,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                 node.right = balance_right_node;
             }
         }
-        let new_root = Self::simple_rotation_left(unbalanced_node);
+        let new_root: Option<Box<AVLNode<T>>> = Self::simple_rotation_left(unbalanced_node);
         new_root
 
     }
@@ -669,30 +669,23 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     }
     pub(crate) fn rebalance(mut node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
         let balance_factor : isize = Self::balance_factor(&mut node);
-        println!("valor nodo : {:?} | factor de balance :{}" ,  node , balance_factor);
         if balance_factor == 2{
-            println!("Balance del nodo");
-            let left_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.left))});
-            println!("left_child_balance_factor {:?}" , left_child_balance_factor);
+            let left_child_balance_factor: Option<isize> = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.left))});
             if let Some(balance_child) = left_child_balance_factor{
                 if balance_child >= 0{ //simple rotation right
-                    println!("rotacion simple derecha");
-                    println!("nodo previo al balance {:?}" , node);
                     node = Self::simple_rotation_right(node.take());
-                    println!("nodo balanceado {:?}" , node);
                 }else if balance_child == -1 { //left_right_rotation
-                    println!("izquierd derecha rotación");
                     node = Self::left_right_rotation(node.take());
                 }
 
             }
         }else if balance_factor == -2 {
-            let right_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.right))});
+            let right_child_balance_factor : Option<isize> = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.right))});
             if let Some(balance_child) = right_child_balance_factor{
-                if balance_child >= 0{ //simple rotation left
+                if balance_child >= 0{ //right_left_rotation
                     node = Self::right_left_rotation(node.take());
 
-                }else if balance_child == -1 {//right_left_rotation
+                }else if balance_child == -1 {//simple rotation left
                     node = Self::simple_rotation_left(node.take());
                 }
             }
@@ -703,10 +696,10 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     ///toda la logica dentro del arbol para el balance de mismo, esta función garantiza una capa de abstracción que mantiene 
     /// el arbol totalmente balanceado.
     pub fn insert_node(&mut self , value : T){
-        self.root = Self::insert_recursive(self.root.take(), value);
+        self.root = Self::insert_recursibly(self.root.take(), value);
         self.size += 1;
     }
-    pub(crate) fn insert_recursive(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
+    pub(crate) fn insert_recursibly(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
         match node {
             None => {
             //Caso base donde insertamos el nodo
@@ -716,12 +709,12 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                 match n.value.cmp(&value) {
                     Ordering::Equal => {todo!("")},
                     Ordering::Greater => { // Caso recursivo
-                        n.left = Self::insert_recursive(n.left.take(), value);
+                        n.left = Self::insert_recursibly(n.left.take(), value);
                         Self::update_height_node(&mut n.left);
                         Self::update_height_node(&mut node);
                     },
                     Ordering::Less => { //Caso Recursivo
-                        n.right = Self::insert_recursive(n.right.take(), value);
+                        n.right = Self::insert_recursibly(n.right.take(), value);
                         Self::update_height_node(&mut n.right); //Actualización de la altura del nodo
                         Self::update_height_node(&mut node); //Actualización de la altura del nodo
                     }
@@ -744,9 +737,15 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                             (None , None) => {
                                 node = None;
                             },
-                            (Some(left_node) , None) => {node = n.left.take();},
-                            (None , Some(right_node)) =>{node = n.right.take();},
-                            (Some(left_node) , Some(right_node)) => {}
+                            (Some(_) , None) => {node = n.left.take();},
+                            (None , Some(_)) =>{node = n.right.take();},
+                            (Some(_) , Some(_)) => {
+                                let max_value_node = Self::find_max(&mut n.left);
+                                if let Some(max_left_subtree) = max_value_node{
+                                    n.left = Self::remove_recursibly(n.left.take(), max_left_subtree);
+                                    n.value = max_left_subtree;
+                                }
+                            }
                         }
                     },
                     Ordering::Greater => {
@@ -762,6 +761,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             }
         }
     }
+    ///Metodo que retorna opcionalmente un T tipo, que encuentra cualquier nodo en el arbol avl.
     pub fn search(&self , value : T) -> Option<T>{
         let mut current_node = &self.root;
         while let Some(current) = current_node{
@@ -775,20 +775,53 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
         current_node.as_ref().and_then(|n| {Some(n.value)})
     }
+    ///Esta función recibe un nodo como raiz y itera hacia la izquierda del nodo hasta que encuentre un caso en que sea None
+    ///Esto nos permite encontrar el minimo valor de un subarbol en el AVL.
+    pub fn find_min(root_tree : &mut Option<Box<AVLNode<T>>>) -> Option<T> {
+        if root_tree.is_none(){
+            return None;
+        }
+        let mut current = root_tree;
+        while let Some(current_node) = current{
+            if current_node.left.is_none(){
+                return Some(current_node.value);
+            }
+            current = &mut current_node.left;
+        }
+        None
+    }
+    ///Esta función recibe un nodo como raiz y itera hacia la derecha del nodo hasta que encuentre un caso en que sea None
+    ///Esto nos permite encontrar el minimo valor de un subarbol en el AVL.
+    pub fn find_max(root_tree : &mut Option<Box<AVLNode<T>>>) -> Option<T> {
+        if root_tree.is_none(){
+            return None;
+        }
+        let mut current = root_tree;
+        while let Some(current_node) = current{
+            if current_node.right.is_none(){
+                return Some(current_node.value);
+            }
+            current = &mut current_node.right;
+        }
+        None
+    }
+    ///Llamado recursivo desde la raiz para hacer un recorrido inorder
     pub fn inorder_tree(&self){
         Self::inorder_recursive(&self.root);
     }
-    fn inorder_recursive(node : &Option<Box<AVLNode<T>>>){
+    pub(crate) fn inorder_recursive(node : &Option<Box<AVLNode<T>>>){
         if let Some(node_unw) = node{
             Self::inorder_recursive(&node_unw.left);
             println!("{}" , node_unw.value);
             Self::inorder_recursive(&node_unw.right);
         }
     }
-    pub fn is_avl(&mut self){
+    ///Llamado recursivo que verifica la propiedad del factor de balance [-1;1]
+    pub(crate) fn is_avl(&mut self){
         Self::verify_property_avl(&mut self.root);
     }
-    fn verify_property_avl(node: &mut Option<Box<AVLNode<T>>>) -> bool{
+    //Llamado recursivo que activa la panic! macro cuando un nodo no cumple con AVL
+    pub(crate) fn verify_property_avl(node: &mut Option<Box<AVLNode<T>>>) -> bool{
         let balance_factor_current_node = Self::balance_factor(node);
         if let Some(n) = node{
             Self::verify_property_avl(&mut n.left);
@@ -810,7 +843,8 @@ mod tests{
     #[test]
     fn test_insertion(){
         let mut tree: AVLTree<i32> = AVLTree::new();
-        for i in vec![10 , 20 , 30 , 40 , 50 , 60 , 70 , 80 , 90 , 1_00].iter(){
+        let nodes: Vec<i32> = vec![10 , 20 , 30 , 40 , 50 , 60 , 70 , 80 , 90 , 1_00];
+        for i in nodes.iter(){
             tree.insert_node(*i);
         }
         tree.inorder_tree();
@@ -923,7 +957,24 @@ mod tests{
         }
         tree.remove_node(100);
         tree.remove_node(90);
-        tree.remove_node(80);
+        tree.remove_node(60);
+        println!("{:?}" , tree);
         tree.is_avl();
+    }
+    #[test]
+    fn find_min_on_tree(){
+        let mut tree : AVLTree<i32> = AVLTree::new();
+        let mut nodes: Vec<i32> = vec![10 , 20 , 30 , 40 , 50 , 60 , 70 , 80 , 1_00];
+        //insertamos nodos
+        nodes.iter().for_each(|n| {
+            tree.insert_node(*n);
+            tree.is_avl();
+        });
+        nodes.reverse();
+        //eliminamos nodos
+        nodes.iter().for_each(|n| {
+            tree.remove_node(*n);
+            tree.is_avl();
+        })
     }
 }

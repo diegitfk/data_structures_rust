@@ -4,7 +4,7 @@ use std::fmt::{Display , Debug};
 /// Está es la estructura básica del nodo de una lista enlazada, este posee tolerancia opcional de tipo recursiva
 ///para poder tolerar el mismo tipo dentro de el.
 /// #Ejemplo Visual de la estructura
-/// ```text
+/// ```
 ///             ----------------
 ///            |       |       |
 ///            | VALUE |  NEXT |
@@ -18,7 +18,7 @@ pub struct NodeLink<T> {
 }
 ///### SinglyLinkedList
 /// Esta estructura compone la opcionalidad de un nodo almacenado en heap y linkea los nodos, de manera logica.
-///```text
+///```
 ///             ---------------          ---------------              
 ///            |       |       |        |       |       |            
 ///            | VALUE |  NEXT | ---->  | VALUE |  NEXT | ----> ....    
@@ -41,13 +41,13 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///### Append
     /// Es un metodo de `LinkedList` encargado de agregar elementos al final de la lista secuencialmente, en este se agrega a la lista al final
     /// y en cada agregación se le aumenta en uno el espacio de la lista.
-    /// ```Rust
+    /// ```
     ///  fn main() {
     ///    let mut linkedList: LinkedList<i32> = LinkedList::new();
     ///    linkedList.append(20);
     ///    linkedList.append(40);
     /// ```
-    /// ```text
+    /// ```
     /// 
     /// append(20) -----↓
     ///             ---------------           \  /  
@@ -86,7 +86,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///### Pop
     /// Pop es una forma de eliminar datos en una lista simplemente enlazada, la complejidad de hacer pop en una lista simplemente enlazada
     /// en el peor de los casos es O(n) y en el mejor O(1) siempre y cuando la lista posea un espacio de un nodo en la misma.
-    /// ```text
+    /// ```
     /// Supongamos que contamos con la siguiente lista
     ///           
     ///             ---------------          ---------------         ---------------              \  /  
@@ -96,7 +96,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///             ---------------          ---------------         ---------------             /    \  
     /// ```
     /// #### pop()
-    /// ```text
+    /// ```
     /// Cuando hacemos pop el penultimo nodo de la lista se enlaza a la referencia siguiente del ultimo nodo de la lista para perder
     /// el enlaze secuencial , eliminandolo de las referencias secuenciales de la siguiente manera.
     ///         
@@ -147,7 +147,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///### Shirt
     /// Shirt es una forma de eliminar datos en una lista simplemente enlazada, la complejidad de hacer shirt en una lista simplemente enlazada
     /// en es O(1) debido a que son unos pequeños movimientos de la cabeza de la lista, a donde apunta.
-    /// ```text
+    /// ```
     /// Supongamos que contamos con la siguiente lista
     ///           
     ///             ---------------          ---------------         ---------------              \  /  
@@ -157,7 +157,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///             ---------------          ---------------         ---------------             /    \  
     /// ```
     /// #### shirt()
-    /// ```text
+    /// ```
     /// Cuando hacemos shirt el penultimo nodo de la lista se enlaza a la referencia siguiente del primer nodo de la lista para perder
     /// el enlaze secuencial , eliminandolo de las referencias secuenciales de la siguiente manera.
     /// 
@@ -205,7 +205,7 @@ where T : Integer + Clone + Copy + Display + Debug{
     ///Hay que buscar el nodo previo a la primera ocurrencia y enlazarlo con el siguiente a la primera ocurrencia
     ///por tanto hay que tener el previo y el siguiente al nodo a eliminar para enlazarlos
     /// ### Remove_first_ocurrence
-    ///```text
+    ///```
     ///  Casos de eliminación
     ///  Caso1: El nodo a eliminar se encuentra entre dos nodos `nodo -> nodo_a_eliminar -> nodo`
     ///                  previo↓                 eliminar ↓             
