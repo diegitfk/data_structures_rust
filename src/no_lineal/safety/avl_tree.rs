@@ -157,7 +157,7 @@
 //! ```
 //! - `Rotaciones Dobles`:
 use num::Integer;
-use std::{cmp::Ordering, fmt::{Debug, Display}, isize};
+use std::{cmp::Ordering, fmt::{Debug, Display}, isize, ops::Deref};
 #[derive(Debug)]
 pub struct AVLNode<T>{
     left : Option<Box<AVLNode<T>>>,
@@ -215,7 +215,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     }
     pub(crate) fn balance_factor(node : &mut Option<Box<AVLNode<T>>>) -> isize{
         match node {
-            None =>{todo!("")},
+            None => 0 ,
             Some(n) => {
                 Self::height(&mut n.left) - Self::height(&mut n.right)
             }
@@ -669,27 +669,30 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     }
     pub(crate) fn rebalance(mut node : Option<Box<AVLNode<T>>>) -> Option<Box<AVLNode<T>>>{
         let balance_factor : isize = Self::balance_factor(&mut node);
+        println!("valor nodo : {:?} | factor de balance :{}" ,  node , balance_factor);
         if balance_factor == 2{
-            println!("Cargado hacia la izquierda");
+            println!("Balance del nodo");
             let left_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.left))});
+            println!("left_child_balance_factor {:?}" , left_child_balance_factor);
             if let Some(balance_child) = left_child_balance_factor{
-                if balance_child == 1{ //simple rotation right
+                if balance_child >= 0{ //simple rotation right
+                    println!("rotacion simple derecha");
+                    println!("nodo previo al balance {:?}" , node);
                     node = Self::simple_rotation_right(node.take());
+                    println!("nodo balanceado {:?}" , node);
                 }else if balance_child == -1 { //left_right_rotation
+                    println!("izquierd derecha rotación");
                     node = Self::left_right_rotation(node.take());
                 }
 
             }
         }else if balance_factor == -2 {
-            println!("Cargado hacia la derecha");
             let right_child_balance_factor = node.as_mut().and_then(|n| {Some(Self::balance_factor(&mut n.right))});
             if let Some(balance_child) = right_child_balance_factor{
-                if balance_child == 1{ //simple rotation left
-                    println!("Hijo cargado a la izquierda");
+                if balance_child >= 0{ //simple rotation left
                     node = Self::right_left_rotation(node.take());
 
                 }else if balance_child == -1 {//right_left_rotation
-                    println!("Hijo cargadp a la derecha");
                     node = Self::simple_rotation_left(node.take());
                 }
             }
@@ -727,7 +730,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             }            
         }
     }
-    fn remove_node(&mut self , value : T){
+    pub fn remove_node(&mut self , value : T){
         self.root = Self::remove_recursibly(self.root.take(), value);
         self.size -= 1;
     }
@@ -738,17 +741,21 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                 match n.value.cmp(&value){
                     Ordering::Equal => {
                         match (&mut n.left, &mut n.right){
-                            (None , None) => {},
-                            (Some(left_node) , None) => {},
-                            (None , Some(right_node)) =>{},
+                            (None , None) => {
+                                node = None;
+                            },
+                            (Some(left_node) , None) => {node = n.left.take();},
+                            (None , Some(right_node)) =>{node = n.right.take();},
                             (Some(left_node) , Some(right_node)) => {}
                         }
                     },
                     Ordering::Greater => {
                         n.left = Self::remove_recursibly(n.left.take(), value);
+                        Self::update_height_node(&mut node);
                     },
                     Ordering::Less => {
                         n.right = Self::remove_recursibly(n.right.take(), value);
+                        Self::update_height_node(&mut node);
                     }  
                 }
                 Self::rebalance(node)
@@ -777,6 +784,23 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             println!("{}" , node_unw.value);
             Self::inorder_recursive(&node_unw.right);
         }
+    }
+    pub fn is_avl(&mut self){
+        Self::verify_property_avl(&mut self.root);
+    }
+    fn verify_property_avl(node: &mut Option<Box<AVLNode<T>>>) -> bool{
+        let balance_factor_current_node = Self::balance_factor(node);
+        if let Some(n) = node{
+            Self::verify_property_avl(&mut n.left);
+            Self::verify_property_avl(&mut n.right);
+        }
+        if balance_factor_current_node >= 2{
+            panic!("No cumple la propiedad AVL");
+        }
+        else {
+            true
+        }
+
     }
 
 }
@@ -898,7 +922,8 @@ mod tests{
             tree.insert_node(*i);
         }
         tree.remove_node(100);
-        println!("{:?}" , tree);
-
+        tree.remove_node(90);
+        tree.remove_node(80);
+        tree.is_avl();
     }
 }
