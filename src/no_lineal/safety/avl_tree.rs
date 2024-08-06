@@ -191,6 +191,9 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             size : 0
         }
     }
+    pub fn len(&self) -> usize{
+        self.size
+    }
     pub(crate) fn height(node : &mut Option<Box<AVLNode<T>>>) -> isize{
         match node {
             None => { //Caso Base: El nodo en el arbol es nulo
@@ -707,13 +710,12 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
             },
             Some(ref mut n) => {
                 match n.value.cmp(&value) {
-                    Ordering::Equal => {todo!("")},
                     Ordering::Greater => { // Caso recursivo
                         n.left = Self::insert_recursibly(n.left.take(), value);
                         Self::update_height_node(&mut n.left);
                         Self::update_height_node(&mut node);
                     },
-                    Ordering::Less => { //Caso Recursivo
+                    Ordering::Equal | Ordering::Less => { //Caso Recursivo
                         n.right = Self::insert_recursibly(n.right.take(), value);
                         Self::update_height_node(&mut n.right); //Actualización de la altura del nodo
                         Self::update_height_node(&mut node); //Actualización de la altura del nodo
@@ -724,8 +726,8 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         }
     }
     pub fn remove_node(&mut self , value : T){
-        self.root = Self::remove_recursibly(self.root.take(), value);
         self.size -= 1;
+        self.root = Self::remove_recursibly(self.root.take(), value);
     }
     fn remove_recursibly(mut node : Option<Box<AVLNode<T>>> , value : T) -> Option<Box<AVLNode<T>>>{
         match node{
@@ -1031,5 +1033,15 @@ mod tests{
             tree.remove_node(*n);
             tree.is_avl();
         });
+    }
+    #[test]
+    fn insert_stresed(){
+        let mut avl_tree : AVLTree<i32> = AVLTree::new();
+        for i in 1..=1_00{
+            avl_tree.insert_node(i);
+        }
+        println!("{:?}" , avl_tree.len());
+
+
     }
 }

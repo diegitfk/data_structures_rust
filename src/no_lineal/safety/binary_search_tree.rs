@@ -130,6 +130,9 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
     pub fn empty(&self) -> bool{
         self.root.is_none()
     }
+    pub fn len(&self) -> usize{
+        self.size
+    }
     ///## Insert_Node
     /// La inserción en una arbol binario de busqueda posee un complejidad temporal de O(log(n)) y en el pero de los casos O(n)
     /// #### Casos de inserción
@@ -210,7 +213,8 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
                 match current_node_unwrapp.value.cmp(&value) {
                     Ordering::Equal => {
                         //No se hace nada en este caso debido a que ya existe el nodo en el arbol.
-                        todo!("Falta retornar un error en este caso");
+                        current_node_unwrapp.right = Self::insertion_recursibly(current_node_unwrapp.right.take(), value);
+                        Some(current_node_unwrapp)
                         },
                     Ordering::Greater => {
                         current_node_unwrapp.left = Self::insertion_recursibly(current_node_unwrapp.left.take(), value);
@@ -575,7 +579,7 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         };
             match node {
                 None => {
-                    todo!("Retornar un error porque el arbol se encuentra vacio");
+                    None
                 },
                 Some(mut node_unw) => {
                     match node_unw.value.cmp(&value) {
@@ -641,13 +645,10 @@ where T : Integer + Clone + Copy + Display + Debug + Ord{
         Self::inorder(&self.root);
     }
     fn inorder(node : &Option<Box<NodeTree<T>>>){
-        match node {
-            Some(ref node) => {
-                Self::inorder(&node.left);
-                println!("{}" , node.as_ref().value);
-                Self::inorder(&node.right);
-            },
-            None => {}
+        if let Some( n) = node {
+                Self::inorder(&n.left);
+                println!("{}" , n.value);
+                Self::inorder(&n.right);
         }
     }
     /// ### Recorrido PostOrder
@@ -740,6 +741,15 @@ mod tests{
         println!("{:?}" , tree);
         assert_eq!(tree.empty() , true);
         assert_eq!(tree.size , 0);
+    }
+    #[test]
+    fn test_insert_xd(){
+        let mut tree : BinarySearchTree<i32> = BinarySearchTree::new();
+        for i in 1..=100{
+            tree.insert_node_recursibly(i);
+        }
+        println!("{}" , tree.len());
+
     }
 }
 
